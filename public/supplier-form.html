@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Анкета поставщика</title>
+  <style>
+    @media print {
+      body {
+        padding: 20px;
+        font-size: 12pt;
+      }
+      
+      input, textarea {
+        border: 1px solid #000 !important;
+      }
+      
+      .no-print {
+        display: none;
+      }
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+    
+    .section h2 {
+      color: #333;
+      border-bottom: 2px solid #333;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+    
+    .field {
+      margin-bottom: 20px;
+    }
+    
+    .field label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #999;
+      border-radius: 0;
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+    }
+    
+    .field textarea {
+      height: 80px;
+      resize: none;
+    }
+    
+    .note {
+      font-size: 0.9em;
+      color: #666;
+      font-style: italic;
+      margin-top: 30px;
+      page-break-inside: avoid;
+    }
+    
+    .print-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #f97316;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .print-button:hover {
+      background: #ea580c;
+    }
+    
+    @media print {
+      .print-button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Анкета поставщика</h1>
+  
+  <div class="section">
+    <h2>1. Общая информация</h2>
+    
+    <div class="field">
+      <label>Полное наименование организации:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>Юридический адрес:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>Фактический адрес:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>ИНН:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>ОКЭД:</label>
+      <input type="text">
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>2. Банковские реквизиты</h2>
+    
+    <div class="field">
+      <label>Наименование банка:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>Расчетный счет:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>МФО:</label>
+      <input type="text">
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>3. Руководство</h2>
+    
+    <div class="field">
+      <label>ФИО директора:</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>Действует на основании:</label>
+      <input type="text">
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>4. Опыт работы</h2>
+    
+    <div class="field">
+      <label>Основные направления деятельности:</label>
+      <textarea></textarea>
+    </div>
+    
+    <div class="field">
+      <label>Крупные реализованные проекты за последние 3 года:</label>
+      <textarea></textarea>
+    </div>
+  </div>
+  
+  <div class="section">
+    <h2>5. Производственные мощности</h2>
+    
+    <div class="field">
+      <label>Собственные производственные площади (м²):</label>
+      <input type="text">
+    </div>
+    
+    <div class="field">
+      <label>Основное оборудование:</label>
+      <textarea></textarea>
+    </div>
+    
+    <div class="field">
+      <label>Количество сотрудников:</label>
+      <input type="text">
+    </div>
+  </div>
+  
+  <p class="note">
+    Примечание: После заполнения анкеты, пожалуйста, распечатайте ее, подпишите, отсканируйте и загрузите в формате PDF при регистрации.
+  </p>
+
+  <button onclick="window.print()" class="print-button no-print">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 6 2 18 2 18 9"></polyline>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+      <rect x="6" y="14" width="12" height="8"></rect>
+    </svg>
+    Распечатать
+  </button>
+</body>
+</html>

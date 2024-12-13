@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 10px;
+        }
+        body {
+            width: 287mm;
+            height: 190mm;
+            margin: 0;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            max-height: 190mm;
+            overflow: hidden;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 4px;
+            text-align: center;
+        }
+        .signatures {
+            position: relative;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: center; margin: 5px 0;">
+        <div style="font-weight: bold;">ЗАЯВКА</div>
+        <div>на закупку Товаров (Работ, Услуг)</div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+        <div style="width: 45%;">
+            Наименование подразделения/должности инициатора:<br>
+            <span style="border-bottom: 1px solid black;">Отдел маркетинга / Продакшен менеджер</span>
+        </div>
+        <div style="width: 45%; text-align: right;">
+            Отделу закупок и снабжения<br>
+            ООО «APEX DEVELOPMENT»
+        </div>
+    </div>
+
+    <div style="margin: 10px 0;">
+        <span>Заявка № _</span> от 03/12/2024г.
+    </div>
+
+    <table>
+        <tr>
+            <th style="width: 5%;">№</th>
+            <th style="width: 35%;">Наименование необходимых<br>товаров (работ, услуг),<br>их технические характеристики и условия</th>
+            <th style="width: 15%;">Лот (описание)<br>Объекта</th>
+            <th style="width: 15%;">начальный срок<br>(периоды)<br>поставки<br>(выполнения<br>работ, услуг)</th>
+            <th style="width: 10%;">ед.изм</th>
+            <th style="width: 15%;">Объем<br>(количество)</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>Сигнальные жилеты для ИТР и гостей:<br>
+            - Высококачественный материал<br>
+            - Нанесение элементов брендинга спереди и сзади<br>
+            - Метод нанесения: печать согласно ТЗ<br>
+            * Требуется стойкая и качественная печать<br>
+            * Для использования на строительных объектах</td>
+            <td>Офис</td>
+            <td>Не более 7 дней</td>
+            <td>шт</td>
+            <td>50</td>
+        </tr>
+    </table>
+
+    <div class="signatures">
+        <div style="width: 100%;">
+            <div style="display: flex; margin-bottom: 15px;">
+                <div style="width: 40%;">Генеральный директор</div>
+                <div style="width: 25%; border-bottom: 1px solid black;"></div>
+                <div style="margin-left: 10px;">А.Р. Раимжонов</div>
+            </div>
+            <div style="display: flex; margin-bottom: 15px;">
+                <div style="width: 40%;">Член закупочной комиссии</div>
+                <div style="width: 25%; border-bottom: 1px solid black;"></div>
+                <div style="margin-left: 10px;">Ф.А. Бабаджанов</div>
+            </div>
+            <div style="display: flex;">
+                <div style="width: 40%;">Продакшн менеджер</div>
+                <div style="width: 25%; border-bottom: 1px solid black;"></div>
+                <div style="margin-left: 10px;">А.Гани</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

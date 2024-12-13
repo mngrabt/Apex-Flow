@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'TT Interphases';
+  src: url('https://mnhpdlwlwycdcexcelaf.supabase.co/storage/v1/object/public/fonts/TTInterphases-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases';
+  src: url('https://mnhpdlwlwycdcexcelaf.supabase.co/storage/v1/object/public/fonts/TTInterphases-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases';
+  src: url('https://mnhpdlwlwycdcexcelaf.supabase.co/storage/v1/object/public/fonts/TTInterphases-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases';
+  src: url('https://mnhpdlwlwycdcexcelaf.supabase.co/storage/v1/object/public/fonts/TTInterphases-DemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases';
+  src: url('https://mnhpdlwlwycdcexcelaf.supabase.co/storage/v1/object/public/fonts/TTInterphases-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  /* Override browser autofill styles */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px rgb(249 250 251) inset !important;
+    -webkit-text-fill-color: rgb(17 24 39) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  html {
+    font-family: 'TT Interphases', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-100 text-gray-900 scrollbar-hide;
+    font-family: 'TT Interphases', system-ui, sans-serif;
+  }
+
+  * {
+    font-family: 'TT Interphases', system-ui, sans-serif;
+  }
+
+  /* Hide scrollbars for all scrollable elements */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Ensure smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
