@@ -2,9 +2,12 @@ import { create } from 'zustand';
 import { Protocol } from '../types';
 import { supabase } from '../lib/supabase';
 import { useCalendarStore } from './calendar';
+import { useAuthStore } from './auth';
 import JSZip from 'jszip';
 import { generateProtocolTemplate } from '../utils/templates/protocolTemplate';
 import { generateRequestTemplate } from '../utils/templates/requestTemplate';
+import { generateCashRequestTemplate } from '../utils/templates/cashRequestTemplate';
+import { sendNotification } from '../services/notificationService';
 
 // Signature URLs for cash requests
 const SIGNATURE_URLS: Record<string, string> = {
@@ -56,7 +59,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
           paid_at,
           created_at,
           department,
-          archived:archived_protocols!inner(
+          archived_protocol:archived_protocols(
             number
           ),
           signatures:protocol_signatures(
@@ -135,7 +138,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         paidAt: p.paid_at,
         createdAt: p.created_at,
         tenderId: p.tender?.id,
-        number: p.archived?.number,
+        number: p.archived_protocol?.number,
         department: p.department,
         signatures: p.signatures?.map((sig: any) => ({
           userId: sig.user_id,
@@ -158,14 +161,14 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             totalSum: item.total_sum || 0
           }))
         } : undefined,
-        tender: p.type === 'tender' && p.tender ? {
+        tender: p.tender ? {
           id: p.tender.id,
           requestId: p.tender.request_id,
           status: p.tender.status,
-          winnerId: p.tender.winner_id || '',
+          winnerId: p.tender.winner_id,
           winnerReason: p.tender.winner_reason,
           createdAt: p.tender.created_at,
-          suppliers: p.tender.suppliers?.map((s: any) => ({
+          suppliers: p.tender.suppliers?.map(s => ({
             id: s.id,
             companyName: s.company_name,
             contactPerson: s.contact_person,
@@ -179,16 +182,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
           })) || [],
           request: p.tender.request ? {
             id: p.tender.request.id,
-            type: 'transfer',
             number: p.tender.request.number,
             date: p.tender.request.date,
             department: p.tender.request.department,
-            categories: p.tender.request.categories || [],
+            categories: p.tender.request.categories,
             documentUrl: p.tender.request.document_url,
             status: p.tender.request.status,
             createdAt: p.tender.request.created_at,
             createdBy: p.tender.request.created_by,
-            items: p.tender.request.items.map(item => ({
+            items: p.tender.request.items?.map(item => ({
               id: item.id,
               name: item.name,
               description: item.description,
@@ -196,7 +198,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
               unitType: item.unit_type,
               quantity: item.quantity,
               deadline: item.deadline
-            }))
+            })) || []
           } : undefined
         } : undefined
       }));
@@ -221,24 +223,28 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
       if (error) throw error;
 
-      // Update local state immediately
+      // Get protocol data for notification
+      const protocol = get().protocols.find(p => p.id === protocolId);
+      if (protocol) {
+        const title = protocol.type === 'cash' 
+          ? protocol.request?.items?.[0]?.name 
+          : protocol.tender?.request?.items?.[0]?.name;
+
+        if (title) {
+          await sendNotification('PROTOCOL_SUBMITTED', {
+            name: title
+          });
+        }
+      }
+
+      // Update local state by removing the submitted protocol
       set(state => ({
-        protocols: state.protocols.map(protocol =>
-          protocol.id === protocolId
-            ? {
-                ...protocol,
-                finance_status: 'waiting',
-                financeStatus: 'waiting',
-                urgency,
-                submitted_at: new Date().toISOString(),
-                submittedAt: new Date().toISOString()
-              }
-            : protocol
+        protocols: state.protocols.map(p => 
+          p.id === protocolId 
+            ? { ...p, finance_status: 'waiting', financeStatus: 'waiting', submittedAt: new Date().toISOString() }
+            : p
         )
       }));
-
-      // Fetch fresh data from server
-      await get().fetchProtocols();
     } catch (error) {
       console.error('Error submitting protocol for payment:', error);
       throw error;
@@ -247,7 +253,36 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   markAsPaid: async (protocolId) => {
     try {
-      // Update protocol status
+      // Get protocol data first to ensure we have the title
+      const protocol = get().protocols.find(p => p.id === protocolId);
+      if (!protocol) {
+        throw new Error('Protocol not found');
+      }
+
+      const title = protocol.type === 'cash' 
+        ? protocol.request?.items?.[0]?.name 
+        : protocol.tender?.request?.items?.[0]?.name;
+      
+      if (!title) {
+        throw new Error('Protocol title not found');
+      }
+
+      // Get current user
+      const user = useAuthStore.getState().user;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create calendar event first
+      const calendarStore = useCalendarStore.getState();
+      await calendarStore.createEvent({
+        title,
+        date: new Date().toISOString(),
+        status: 'unassigned',
+        protocolId: protocolId
+      });
+
+      // If calendar event was created successfully, update protocol status
       const { error } = await supabase
         .from('protocols')
         .update({
@@ -258,27 +293,28 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
       if (error) throw error;
 
+      // Send notification
+      await sendNotification('PROTOCOL_PAID', {
+        name: title
+      });
+
       // Update local state immediately
       set(state => ({
-        protocols: state.protocols.map(protocol =>
-          protocol.id === protocolId
+        protocols: state.protocols.map(p =>
+          p.id === protocolId
             ? {
-                ...protocol,
+                ...p,
                 finance_status: 'paid',
                 financeStatus: 'paid',
                 paid_at: new Date().toISOString(),
                 paidAt: new Date().toISOString()
               }
-            : protocol
+            : p
         )
       }));
 
       // Fetch fresh data from server
       await get().fetchProtocols();
-
-      // Trigger calendar store to fetch updated events
-      const calendarStore = useCalendarStore.getState();
-      await calendarStore.fetchEvents();
 
     } catch (error) {
       console.error('Error marking protocol as paid:', error);
@@ -346,72 +382,18 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   downloadArchive: async (protocol: Protocol, fileName: string) => {
     try {
       if (protocol.type === 'cash') {
-        // For cash requests, generate HTML from template
-        const response = await fetch('/templates/cash_request.html');
-        const template = await response.text();
-
-        // Get the first item from the request
-        const item = protocol.request?.items[0];
-        if (!item) throw new Error('No items found in request');
-
-        // Format date
-        const date = new Date(protocol.request?.date || '').toLocaleDateString('ru-RU');
-
-        // Function to generate signature image if user has signed
-        const getSignatureHtml = (userId: string) => {
-          if (protocol.signatures.some(sig => sig.userId === userId) && SIGNATURE_URLS[userId]) {
-            const position = SIGNATURE_POSITIONS[userId];
-            return `<div class="signature-image" style="position: absolute; left: calc(50% + ${position.x}px); top: ${position.y}px; z-index: 1; pointer-events: none; transform: translate(-50%, 0);">
-              <img src="${SIGNATURE_URLS[userId]}" alt="Подпись" style="height: 50px; margin: 0; padding: 0; display: block;">
-            </div>`;
-          }
-          return '';
-        };
-
-        // Add signature styles to the template
-        let html = template.replace('</style>', `
-          .signature-container {
-            position: relative;
-            margin-bottom: 1px;
-            white-space: nowrap;
-            line-height: 0;
-          }
-          .signature-image {
-            position: absolute;
-            z-index: 1;
-            pointer-events: none;
-            transform: translate(-50%, 0);
-          }
-          .signature-image img {
-            margin: 0;
-            padding: 0;
-            display: block;
-          }
-        </style>`);
-
-        // Replace placeholders in template
-        html = html
-          .replace('03.12.2024', date)
-          .replace('Наклейки на огнетушители', item.name)
-          .replace('8 шт.', `${item.quantity} шт.`)
-          .replace('100 000 сум (сто тысяч сум)', `${item.totalSum.toLocaleString('ru-RU')} сум`)
-          .replace('Приобретение и установка наклеек для маркировки огнетушителей', item.description || '');
-
-        // Add signature images
-        html = html
-          .replace('<p>Продакшен Менеджер<span class="sign-line"></span>А. Гани</p>', 
-            `<div class="signature-container">Продакшен Менеджер<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span>А. Гани</div>`)
-          .replace('<p>Член закупочной комиссии<span class="sign-line"></span>Ф.А. Бабаджанов</p>', 
-            `<div class="signature-container">Член закупочной комиссии<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000003')}</span>Ф.А. Бабаджанов</div>`)
-          .replace('<p>Генеральный директор<span class="sign-line"></span>А.Р. Раимжонов</p>', 
-            `<div class="signature-container">Генеральный директор<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000004')}</span>А.Р. Раимжонов</div>`);
+        // Generate HTML from template
+        const html = await generateCashRequestTemplate(protocol);
+        if (!html) {
+          throw new Error('Failed to generate cash request template');
+        }
 
         // Create blob and download
         const blob = new Blob([html], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `cash_request_${protocol.request?.number || protocol.id}.html`;
+        a.download = `${protocol.request?.items[0]?.name || 'Наличные'}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -464,7 +446,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         const url = window.URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `protocol_${protocol.number || protocol.id}.zip`;
+        a.download = `${protocol.tender?.request?.items[0]?.name || 'Протокол'}.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

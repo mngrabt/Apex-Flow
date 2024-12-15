@@ -60,6 +60,40 @@ export default function SupplierDetails({ supplierId, onBack }: SupplierDetailsP
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Sidebar - Actions (Mobile) */}
+          <div className="lg:hidden space-y-6">
+            {/* Action Card */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Действия
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => toggleNotifications(supplier.id)}
+                    className={`w-full flex items-center justify-center px-4 py-2.5 
+                             ${supplier.notificationsEnabled 
+                               ? 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                               : 'bg-primary/10 hover:bg-primary/20 text-primary'
+                             }
+                             rounded-xl font-medium transition-colors`}
+                  >
+                    {supplier.notificationsEnabled ? 'Отключить уведомления' : 'Включить уведомления'}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    aria-label="Удалить поставщика"
+                    className="w-full flex items-center justify-center px-4 py-2.5 
+                             bg-primary/10 hover:bg-primary/20 text-primary
+                             rounded-xl font-medium transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Card */}
@@ -81,6 +115,31 @@ export default function SupplierDetails({ supplierId, onBack }: SupplierDetailsP
                     ))}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm space-y-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Контактная информация
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InfoBlock
+                  label="Контактное лицо"
+                  value={supplier.contactPerson}
+                />
+                <InfoBlock
+                  label="Телефон"
+                  value={supplier.phone}
+                />
+                <InfoBlock
+                  label="Email"
+                  value={supplier.email}
+                />
+                <InfoBlock
+                  label="ИНН"
+                  value={supplier.inn || '-'}
+                />
               </div>
             </div>
 
@@ -110,34 +169,42 @@ export default function SupplierDetails({ supplierId, onBack }: SupplierDetailsP
               </div>
             </div>
 
-            {/* Contact Information */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Контактная информация
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoBlock
-                  label="Контактное лицо"
-                  value={supplier.contactPerson}
-                />
-                <InfoBlock
-                  label="Телефон"
-                  value={supplier.phone}
-                />
-                <InfoBlock
-                  label="Email"
-                  value={supplier.email}
-                />
-                <InfoBlock
-                  label="ИНН"
-                  value={supplier.inn || '-'}
-                />
+            {/* Documents (Mobile) */}
+            <div className="lg:hidden bg-white rounded-2xl p-8 shadow-sm space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Документы
+              </h3>
+              <div className="space-y-3">
+                {supplier.vatCertificateUrl && (
+                  <DocumentBlock
+                    label="Сертификат НДС"
+                    url={supplier.vatCertificateUrl}
+                  />
+                )}
+                {supplier.licenseUrl && (
+                  <DocumentBlock
+                    label="Гувохнома"
+                    url={supplier.licenseUrl}
+                  />
+                )}
+                {supplier.passportUrl && (
+                  <DocumentBlock
+                    label="Паспорт"
+                    url={supplier.passportUrl}
+                  />
+                )}
+                {supplier.formUrl && (
+                  <DocumentBlock
+                    label="Анкета"
+                    url={supplier.formUrl}
+                  />
+                )}
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar - Desktop Only */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-8 space-y-6">
               {/* Action Card */}
               <div className="bg-white rounded-2xl p-8 shadow-sm">

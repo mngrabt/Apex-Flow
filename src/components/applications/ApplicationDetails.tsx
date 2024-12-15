@@ -137,14 +137,43 @@ export default function ApplicationDetails() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Actions (Mobile) */}
+        <div className="lg:hidden bg-white rounded-2xl p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Действия</h2>
+          <div className="space-y-3">
+            <button
+              onClick={handleApprove}
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 
+                       bg-primary text-white rounded-xl font-medium
+                       hover:bg-primary/90 transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Одобрить заявку
+            </button>
+            <button
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 
+                       bg-gray-100 text-gray-700 rounded-xl font-medium
+                       hover:bg-gray-200 transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <XCircle className="w-5 h-5" />
+              Отклонить заявку
+            </button>
+          </div>
+        </div>
+
         {/* Left Column */}
         <div className="space-y-8">
           {/* Company Information */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Информация о компании</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Название компании</div>
                   <div className="font-medium text-gray-900">{application.companyName}</div>
@@ -174,7 +203,7 @@ export default function ApplicationDetails() {
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Контактная информация</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
                   <div className="font-medium text-gray-900">{application.contactPerson}</div>
@@ -186,10 +215,41 @@ export default function ApplicationDetails() {
               </div>
             </div>
           </div>
+
+          {/* Documents (Mobile) */}
+          <div className="lg:hidden bg-white rounded-2xl p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Документы</h2>
+            <div className="space-y-3">
+              {application.isVatPayer && application.vatCertificateUrl && (
+                <DocumentLink
+                  label="Сертификат НДС"
+                  url={application.vatCertificateUrl}
+                />
+              )}
+              {application.licenseUrl && (
+                <DocumentLink
+                  label="Гувохнома"
+                  url={application.licenseUrl}
+                />
+              )}
+              {application.passportUrl && (
+                <DocumentLink
+                  label="Паспорт"
+                  url={application.passportUrl}
+                />
+              )}
+              {application.formUrl && (
+                <DocumentLink
+                  label="Анкета"
+                  url={application.formUrl}
+                />
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-8">
+        {/* Right Column - Desktop Only */}
+        <div className="hidden lg:block space-y-8">
           {/* Actions */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Действия</h2>

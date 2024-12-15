@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, Mail, Phone, Bell, BellOff, FileText, Trash2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Building2, Mail, Phone, Bell, BellOff, FileText, Trash2, ExternalLink, X } from 'lucide-react';
 import { useSupplierStore } from '../store/supplier';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { styles } from '../utils/styleConstants';
+import { Modal } from '../components/shared';
 
 export default function SupplierDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const { suppliers, fetchSuppliers, toggleNotifications } = useSupplierStore();
+  const { suppliers, fetchSuppliers, toggleNotifications, deleteSupplier } = useSupplierStore();
   const supplier = suppliers.find(s => s.id === id);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,6 +34,19 @@ export default function SupplierDetails() {
       navigate('/database');
     }
   }, [supplier, navigate, isLoading]);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteSupplier(supplier?.id as string);
+      navigate('/database');
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -121,14 +136,51 @@ export default function SupplierDetails() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Actions (Mobile) */}
+        <div className="lg:hidden bg-white rounded-2xl p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Действия</h2>
+          <div className="space-y-3">
+            <button
+              onClick={() => toggleNotifications(supplier.id)}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-3 
+                       ${supplier.notificationsEnabled 
+                         ? 'bg-gray-50 hover:bg-gray-100 text-gray-900' 
+                         : 'bg-primary text-white hover:bg-primary/90'
+                       }
+                       rounded-xl font-medium transition-colors`}
+            >
+              {supplier.notificationsEnabled ? (
+                <>
+                  <BellOff className="w-5 h-5" />
+                  Отключить уведомления
+                </>
+              ) : (
+                <>
+                  <Bell className="w-5 h-5" />
+                  Включить уведомления
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 
+                       bg-primary text-white rounded-xl font-medium
+                       hover:bg-primary/90 transition-colors"
+            >
+              <Trash2 className="w-5 h-5" />
+              Удалить поставщика
+            </button>
+          </div>
+        </div>
+
         {/* Left Column */}
         <div className="space-y-8">
           {/* Company Information */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Информация о компании</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Название компании</div>
                   <div className="font-medium text-gray-900">{supplier.name || '-'}</div>
@@ -154,11 +206,28 @@ export default function SupplierDetails() {
             </div>
           </div>
 
+          {/* Contact Information */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Контактная информация</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                  <div className="font-medium text-gray-900">{supplier.contactPerson || '-'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Телефон</div>
+                  <div className="font-medium text-gray-900">{formatPhoneNumber(supplier.phone)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Tender Statistics */}
           {tenderCount > 0 && (
             <div className="bg-white rounded-2xl p-8 shadow-sm relative overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-900 mb-6">Статистика участия в тендерах</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Всего тендеров</div>
                   <div className="font-medium text-gray-900">{tenderCount}</div>
@@ -191,26 +260,92 @@ export default function SupplierDetails() {
             </div>
           )}
 
-          {/* Contact Information */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Контактная информация</h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
-                  <div className="font-medium text-gray-900">{supplier.contactPerson || '-'}</div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Телефон</div>
-                  <div className="font-medium text-gray-900">{formatPhoneNumber(supplier.phone)}</div>
-                </div>
-              </div>
+          {/* Documents (Mobile) */}
+          <div className="lg:hidden bg-white rounded-2xl p-8 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Документы</h2>
+            <div className="space-y-3">
+              {supplier.vatCertificateUrl && (
+                <button
+                  onClick={() => window.open(supplier.vatCertificateUrl, '_blank')}
+                  className="flex items-center space-x-4 w-full p-4 bg-gray-50/50 backdrop-blur
+                           rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                >
+                  <div className="p-2 rounded-lg bg-white shadow-sm group-hover:shadow transition-shadow">
+                    <FileText className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
+                      Сертификат ��ДС
+                    </h4>
+                    <p className="text-sm text-gray-500 group-hover:text-primary/80 transition-colors">
+                      Скачать документ
+                    </p>
+                  </div>
+                </button>
+              )}
+              {supplier.licenseUrl && (
+                <button
+                  onClick={() => window.open(supplier.licenseUrl, '_blank')}
+                  className="flex items-center space-x-4 w-full p-4 bg-gray-50/50 backdrop-blur
+                           rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                >
+                  <div className="p-2 rounded-lg bg-white shadow-sm group-hover:shadow transition-shadow">
+                    <FileText className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
+                      Гувохнома
+                    </h4>
+                    <p className="text-sm text-gray-500 group-hover:text-primary/80 transition-colors">
+                      Скачать документ
+                    </p>
+                  </div>
+                </button>
+              )}
+              {supplier.passportUrl && (
+                <button
+                  onClick={() => window.open(supplier.passportUrl, '_blank')}
+                  className="flex items-center space-x-4 w-full p-4 bg-gray-50/50 backdrop-blur
+                           rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                >
+                  <div className="p-2 rounded-lg bg-white shadow-sm group-hover:shadow transition-shadow">
+                    <FileText className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
+                      Паспорт
+                    </h4>
+                    <p className="text-sm text-gray-500 group-hover:text-primary/80 transition-colors">
+                      Скачать документ
+                    </p>
+                  </div>
+                </button>
+              )}
+              {supplier.formUrl && (
+                <button
+                  onClick={() => window.open(supplier.formUrl, '_blank')}
+                  className="flex items-center space-x-4 w-full p-4 bg-gray-50/50 backdrop-blur
+                           rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                >
+                  <div className="p-2 rounded-lg bg-white shadow-sm group-hover:shadow transition-shadow">
+                    <FileText className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
+                      Анкета
+                    </h4>
+                    <p className="text-sm text-gray-500 group-hover:text-primary/80 transition-colors">
+                      Скачать документ
+                    </p>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-8">
+        {/* Right Column - Desktop Only */}
+        <div className="hidden lg:block space-y-8">
           {/* Actions */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Действия</h2>
@@ -283,30 +418,83 @@ export default function SupplierDetails() {
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <Modal
-          title="Удаление поставщика"
-          onClose={() => setIsDeleteModalOpen(false)}
-        >
-          <div className="p-6">
-            <p className="text-gray-700">
-              Вы уверены, что хотите удалить этого поставщика? Это действие нельзя отменить.
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Удалить
-              </button>
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsDeleteModalOpen(false)}
+          />
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl">
+              {/* Header */}
+              <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Удаление поставщика
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Это действие нельзя отменить
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="-mt-1 p-2.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-xl transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8">
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+                  <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center flex-shrink-0">
+                    <Trash2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-700">
+                      Вы уверены, что хотите удалить поставщика <span className="font-medium">{supplier.name}</span>? Все данные, связанные с этим поставщиком, будут удалены.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-8 py-6 bg-gray-50 border-t border-gray-100 rounded-b-2xl">
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="h-12 px-6 rounded-xl text-sm font-medium text-gray-700
+                             bg-white border border-gray-200 hover:bg-gray-50
+                             focus:outline-none focus:ring-2 focus:ring-primary/20
+                             transition-colors"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="h-12 px-6 rounded-xl text-sm font-medium text-white
+                             bg-primary hover:bg-primary/90 
+                             focus:outline-none focus:ring-2 focus:ring-primary/20
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-colors inline-flex items-center gap-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        <span>Удаление...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Удалить</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </Modal>
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Request, TransferRequest } from '../types';
 import { supabase } from '../lib/supabase';
 import { useTenderStore } from './tender';
+import { sendNotification } from '../services/notificationService';
 
 // Helper function to generate UUID
 function generateUUID() {
@@ -113,6 +114,11 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
         });
 
       if (signError) throw signError;
+
+      // Send initial notification to Fozil and Aziz
+      await sendNotification('REQUEST_NEEDS_SIGNATURE', {
+        name: request.items[0]?.name || `Заявка #${requestData.id}`
+      });
 
       // Fetch the complete request with all relations
       const { data: completeRequest, error: fetchError } = await supabase
@@ -287,13 +293,18 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
       if (!request) throw new Error('Request not found');
 
       // Check if all required signatures are present
-      const hasAllSignatures = [
+      const requiredSigners = [
         '00000000-0000-0000-0000-000000000001', // Abdurauf
         '00000000-0000-0000-0000-000000000003', // Fozil
         '00000000-0000-0000-0000-000000000004'  // Aziz
-      ].every(requiredId => 
+      ];
+
+      const hasAllSignatures = requiredSigners.every(requiredId => 
         signatures.some(sig => sig.user_id === requiredId)
       );
+
+      // We don't need to send notifications when someone signs
+      // Only the initial request creation should trigger notifications
 
       if (hasAllSignatures) {
         if (request.type === 'cash') {
@@ -332,6 +343,12 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
             .eq('status', 'pending'); // Only update if still in pending state
 
           if (finalUpdateError) throw finalUpdateError;
+
+          // Send notification about new tender
+          await sendNotification('NEW_TENDER', {
+            name: request.items[0]?.name || `Заявка #${request.id}`,
+            categories: request.categories || []
+          });
         }
       }
 

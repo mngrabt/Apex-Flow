@@ -56,10 +56,15 @@ export default function FinanceList({
   });
 
   const handleProtocolClick = (protocol: Protocol) => {
-    if (protocol.type === 'cash') {
-      navigate(`/cash-requests/${protocol.id}`);
+    // For cash requests, use request ID, otherwise use protocol ID
+    if (protocol.type === 'cash' && protocol.request) {
+      navigate(`/cash-requests/${protocol.request.id}`, {
+        state: { from: 'finances', view }
+      });
     } else {
-      navigate(`/protocols/${protocol.id}`);
+      navigate(`/protocols/${protocol.id}`, {
+        state: { from: 'finances', view }
+      });
     }
   };
 

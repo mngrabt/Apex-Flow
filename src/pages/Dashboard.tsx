@@ -71,15 +71,18 @@ export default function Dashboard() {
 
   // Get pending items that need attention
   const pendingRequests = requests?.filter(r => !r.signatures?.some(s => s.userId === user.id)) || [];
-  const pendingProtocols = protocols?.filter(p => !p.signatures?.some(s => s.userId === user.id)) || [];
+  const pendingProtocols = protocols?.filter(p => 
+    p.type !== 'cash' && // Exclude cash requests
+    !p.signatures?.some(s => s.userId === user.id)
+  ) || [];
   const activeTenders = tenders?.filter(t => t.status === 'active') || [];
   const pendingTasks = tasks?.filter(t => !t.completedAt) || [];
 
   // Get delayed payment protocols
   const delayedProtocols = protocols?.filter(protocol => {
-    if (protocol.financeStatus !== 'submitted' || !protocol.submittedAt) return false;
+    if (protocol.financeStatus !== 'waiting' || !protocol.submittedAt) return false;
     const waitingDays = differenceInDays(new Date(), new Date(protocol.submittedAt));
-    return waitingDays >= 5;
+    return waitingDays > 5;
   }) || [];
 
   // Calculate completion rates
@@ -239,7 +242,7 @@ export default function Dashboard() {
                       return (
                         <div
                           key={protocol.id}
-                          onClick={() => navigate(`/finances/${protocol.id}`)}
+                          onClick={() => protocol.type === 'cash' ? navigate(`/cash-requests/${protocol.id}`) : navigate(`/protocols/${protocol.id}`)}
                           className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 
                                    cursor-pointer transition-colors"
                         >
@@ -375,7 +378,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {tenders?.slice(0, 3).map(tender => {
+                  {activeTenders?.slice(0, 3).map(tender => {
                     const request = requests?.find(r => r.id === tender.requestId);
                     const firstItem = request?.items?.[0];
                     
@@ -401,7 +404,7 @@ export default function Dashboard() {
                       </div>
                     );
                   })}
-                  {(!tenders || tenders.length === 0) && (
+                  {(!activeTenders || activeTenders.length === 0) && (
                     <div className="text-center py-8 text-sm text-gray-500">
                       Нет активных тендеров
                     </div>
@@ -412,16 +415,16 @@ export default function Dashboard() {
               {/* Quick Actions for Mobile */}
               <div className="lg:hidden bg-primary rounded-2xl p-6 text-white">
                 <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
                   <button
                     onClick={() => navigate('/requests', { state: { openForm: true } })}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                              bg-white/10 hover:bg-white/20 transition-colors text-center"
+                              bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
                   >
                     <FileText className="w-5 h-5" />
                     <span className="text-sm font-medium">Новая заявка</span>
                   </button>
-                  {hasTaskAccess && (
+                  {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
                     <button
                       onClick={() => navigate('/tasks', { state: { openForm: true } })}
                       className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
@@ -548,7 +551,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={protocol.id}
-                        onClick={() => navigate(`/finances/${protocol.id}`)}
+                        onClick={() => protocol.type === 'cash' ? navigate(`/cash-requests/${protocol.id}`) : navigate(`/protocols/${protocol.id}`)}
                         className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 
                                  cursor-pointer transition-colors"
                       >
@@ -705,7 +708,7 @@ export default function Dashboard() {
                         {supplier.companyName}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {supplier.contactPerson || 'Нет контактного ли��а'}
+                        {supplier.contactPerson || 'Нет контактного лица'}
                       </div>
                     </div>
                   </div>
@@ -811,16 +814,16 @@ export default function Dashboard() {
             {/* Quick Actions - Desktop Only */}
             <div className="hidden lg:block bg-primary rounded-2xl p-6 text-white">
               <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
                 <button
                   onClick={() => navigate('/requests', { state: { openForm: true } })}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                            bg-white/10 hover:bg-white/20 transition-colors text-center"
+                            bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
                 >
                   <FileText className="w-5 h-5" />
                   <span className="text-sm font-medium">Новая заявка</span>
                 </button>
-                {hasTaskAccess && (
+                {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
                   <button
                     onClick={() => navigate('/tasks', { state: { openForm: true } })}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 

@@ -37,6 +37,24 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
     });
   };
 
+  // Get today's actual events
+  const todayEvents = getEventsForDay(new Date());
+
+  // Get selected day events (for month view)
+  const selectedDayEvents = getEventsForDay(selectedDate);
+
+  // Get upcoming events for schedule view
+  const upcomingEvents = events
+    .filter(event => {
+      try {
+        const eventDate = parseISO(event.date);
+        return eventDate > new Date() && !isDateToday(eventDate);
+      } catch (error) {
+        return false;
+      }
+    })
+    .slice(0, 3);
+
   const calendarDays = (() => {
     const days: Date[] = [];
     let currentDate = monthStart;
@@ -66,29 +84,45 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
     onSelectDate(newDate);
   };
 
-  // Get today's events for the sidebar
-  const selectedDayEvents = getEventsForDay(selectedDate);
-
-  // Get upcoming events for schedule view
-  const upcomingEvents = events
-    .filter(event => {
-      try {
-        const eventDate = parseISO(event.date);
-        return eventDate > new Date() && !isDateToday(eventDate);
-      } catch (error) {
-        return false;
-      }
-    })
-    .slice(0, 3);
-
   return (
-    <div className="grid grid-cols-[1fr_320px] gap-5">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+      {/* Unscheduled Events (Mobile) */}
+      <div className="lg:hidden space-y-5">
+        {upcomingEvents.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <h3 className="text-sm font-medium text-gray-900 mb-4">Предстоящие события</h3>
+            <div className="bg-gray-50/50 rounded-lg divide-y divide-gray-100">
+              {upcomingEvents.map(event => (
+                <div
+                  key={event.id}
+                  className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-100/50 
+                           transition-colors first:rounded-t-lg last:rounded-b-lg"
+                  onClick={() => setSelectedEvent(event)}
+                >
+                  <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {event.title}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      {format(parseISO(event.date), 'd MMMM', { locale: ru })}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
       <div>
         {/* Calendar Card */}
         <div className="bg-white rounded-xl border border-gray-100">
           {/* Calendar Header */}
           <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {format(selectedDate, 'LLLL yyyy', { locale: ru })}
@@ -205,86 +239,187 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
             ) : (
               <div className="space-y-6">
                 {/* Today's Schedule */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-4">Сегодня</h3>
-                  <div className="bg-gray-50/50 rounded-lg divide-y divide-gray-100">
-                    {selectedDayEvents.map(event => (
-                      <div
-                        key={event.id}
-                        className={`
-                          flex items-center gap-4 p-4 cursor-pointer
-                          transition-colors hover:bg-gray-100/50 first:rounded-t-lg last:rounded-b-lg
-                        `}
-                        onClick={() => canManageEvents ? setSelectedEvent(event) : null}
-                      >
-                        <div className={`
-                          w-2 h-2 rounded-full shrink-0
-                          ${event.completed ? 'bg-green-500' : 'bg-primary'}
-                        `} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {event.title}
-                            </p>
-                            {event.completed && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            )}
-                          </div>
-                          {event.description && (
-                            <p className="text-sm text-gray-500 truncate mt-0.5">{event.description}</p>
-                          )}
-                        </div>
-                        {canManageEvents && !event.completed && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markEventComplete(event.id, user?.id);
-                            }}
-                            className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            <Clock className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Upcoming Schedule */}
-                {upcomingEvents.length > 0 && (
+                {todayEvents.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-4">Предстоящие события</h3>
+                    <h3 className="text-sm font-medium text-gray-900 mb-4">Сегодня</h3>
                     <div className="bg-gray-50/50 rounded-lg divide-y divide-gray-100">
-                      {upcomingEvents.map(event => (
+                      {todayEvents.map(event => (
                         <div
                           key={event.id}
-                          className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-100/50 
-                                   transition-colors first:rounded-t-lg last:rounded-b-lg"
-                          onClick={() => setSelectedEvent(event)}
+                          className={`
+                            flex items-center gap-4 p-4 cursor-pointer
+                            transition-colors hover:bg-gray-100/50 first:rounded-t-lg last:rounded-b-lg
+                          `}
+                          onClick={() => canManageEvents ? setSelectedEvent(event) : null}
                         >
-                          <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                          <div className={`
+                            w-2 h-2 rounded-full shrink-0
+                            ${event.completed ? 'bg-green-500' : 'bg-primary'}
+                          `} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {event.title}
-                            </p>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                              {format(parseISO(event.date), 'd MMMM', { locale: ru })}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {event.title}
+                              </p>
+                              {event.completed && (
+                                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              )}
+                            </div>
+                            {event.description && (
+                              <p className="text-sm text-gray-500 truncate mt-0.5">{event.description}</p>
+                            )}
                           </div>
-                          <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+                          {canManageEvents && !event.completed && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markEventComplete(event.id, user?.id);
+                              }}
+                              className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <Clock className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Upcoming Schedule (Desktop) */}
+                <div className="hidden lg:block">
+                  {upcomingEvents.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 mb-4">Предстоящие события</h3>
+                      <div className="bg-gray-50/50 rounded-lg divide-y divide-gray-100">
+                        {upcomingEvents.map(event => (
+                          <div
+                            key={event.id}
+                            className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-100/50 
+                                     transition-colors first:rounded-t-lg last:rounded-b-lg"
+                            onClick={() => setSelectedEvent(event)}
+                          >
+                            <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {event.title}
+                              </p>
+                              <p className="text-sm text-gray-500 mt-0.5">
+                                {format(parseISO(event.date), 'd MMMM', { locale: ru })}
+                              </p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="space-y-5">
+      {/* Daily Events and Completed Events (Mobile) */}
+      <div className="lg:hidden space-y-5">
+        {/* Daily Events */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-900">
+              {format(selectedDate, 'd MMMM, EEEE', { locale: ru })}
+            </h3>
+            {isDateToday(selectedDate) && (
+              <span className="text-xs font-medium text-primary bg-primary/5 px-2 py-1 rounded-md">
+                Сегодня
+              </span>
+            )}
+          </div>
+          
+          {selectedDayEvents.length > 0 ? (
+            <div className="space-y-2">
+              {selectedDayEvents.map(event => (
+                <div
+                  key={event.id}
+                  className={`
+                    group flex items-center gap-3 p-3 rounded-lg cursor-pointer
+                    ${event.completed 
+                      ? 'bg-green-50 hover:bg-green-100' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                    }
+                    transition-colors
+                  `}
+                  onClick={() => setSelectedEvent(event)}
+                >
+                  <div className={`
+                    w-1.5 h-1.5 rounded-full
+                    ${event.completed ? 'bg-green-500' : 'bg-primary'}
+                  `} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {event.title}
+                    </p>
+                    {event.description && (
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {event.description}
+                      </p>
+                    )}
+                  </div>
+                  {canManageEvents && !event.completed && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markEventComplete(event.id, user?.id);
+                      }}
+                      className="p-2 text-gray-400 hover:text-primary rounded-lg 
+                               hover:bg-white opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">
+              Нет событий на этот день
+            </div>
+          )}
+        </div>
+
+        {/* Completed Events */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6">
+          <h3 className="text-sm font-medium text-gray-900 mb-4">Завершенны�� события</h3>
+          <div className="space-y-2">
+            {events.filter(event => event.completed).map(event => (
+              <div
+                key={event.id}
+                className="group flex items-center gap-3 p-3 rounded-lg bg-green-50 hover:bg-green-100 
+                         cursor-pointer transition-colors"
+                onClick={() => setSelectedEvent(event)}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {event.title}
+                  </p>
+                  {event.description && (
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                      {event.description}
+                    </p>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {format(parseISO(event.date), 'd MMM', { locale: ru })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden lg:block space-y-5">
         {/* Selected Day Events */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">

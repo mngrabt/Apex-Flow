@@ -11,11 +11,13 @@ import { useArchiveStore } from '../../store/archive';
 interface ArchiveListItemProps {
   protocol: ArchivedProtocol;
   requestName: string;
+  onClick: () => void;
 }
 
 export default function ArchiveListItem({ 
   protocol, 
-  requestName
+  requestName,
+  onClick
 }: ArchiveListItemProps) {
   const navigate = useNavigate();
   const { downloadArchive } = useArchiveStore();
@@ -76,7 +78,7 @@ export default function ArchiveListItem({
     <>
       <div 
         className={`${styles.components.card} hover:bg-gray-50 transition-colors cursor-pointer`}
-        onClick={() => navigate(`/protocols/${protocol.id}`)}
+        onClick={onClick}
       >
         <div className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
           {/* Name - 40% */}

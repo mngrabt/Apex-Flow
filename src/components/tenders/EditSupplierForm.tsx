@@ -278,7 +278,7 @@ export default function EditSupplierForm({
                     )}
                     {isPricePerUnit && (
                       <p className="text-xs text-gray-500 mt-1">
-                        Общая су��ма: {formatDisplayPrice(formData.price)} сум
+                        Общая сумма: {formatDisplayPrice(formData.price)} сум
                       </p>
                     )}
                   </div>

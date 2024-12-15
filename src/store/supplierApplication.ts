@@ -3,6 +3,7 @@ import { SupplierApplication } from '../types';
 import { supabase } from '../lib/supabase';
 import { sendTelegramMessage } from '../services/telegram';
 import { generateNotificationMessage } from '../services/telegram';
+import { sendNotification } from '../services/notificationService';
 
 interface SupplierApplicationState {
   applications: SupplierApplication[];
@@ -70,7 +71,7 @@ export const useSupplierApplicationStore = create<SupplierApplicationState>((set
         .single();
 
       if (existingUser) {
-        throw new Error('Это имя пользователя уже занято');
+        throw new Error('Это ��мя пользователя уже занято');
       }
 
       // Upload files if present
@@ -125,8 +126,12 @@ export const useSupplierApplicationStore = create<SupplierApplicationState>((set
       if (error) throw error;
 
       // Send notification to admins
-      const message = generateNotificationMessage('application', application.companyName);
-      await sendTelegramMessage('2041833916', message);
+      await sendNotification('NEW_APPLICATION', {
+        companyName: application.companyName,
+        userIds: [
+          '00000000-0000-0000-0000-000000000001' // Abdurauf
+        ]
+      });
 
       await get().fetchApplications();
     } catch (error) {
@@ -141,54 +146,28 @@ export const useSupplierApplicationStore = create<SupplierApplicationState>((set
       if (!application) throw new Error('Application not found');
 
       if (approved) {
-        // Create supplier in database
-        const { error: supplierError } = await supabase
-          .from('database_suppliers')
-          .insert({
-            name: application.companyName,
-            categories: application.categories,
-            status: 'verified',
-            notifications_enabled: true,
-            contact_person: application.contactPerson,
-            phone: application.contactNumber,
-            email: application.email,
-            inn: application.inn,
-            vat_certificate_url: application.vatCertificateUrl,
-            license_url: application.licenseUrl,
-            passport_url: application.passportUrl,
-            form_url: application.formUrl,
-            telegram_chat_id: application.telegramChatId
+        // Use the new secure function for approval
+        const { error: approvalError } = await supabase
+          .rpc('approve_supplier_application', {
+            application_id: id,
+            reviewer_id: reviewerId
           });
 
-        if (supplierError) throw supplierError;
+        if (approvalError) throw approvalError;
+      } else {
+        // For rejection, just update the status
+        const { error: updateError } = await supabase
+          .from('supplier_applications')
+          .update({
+            status: 'rejected',
+            review_notes: notes,
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: reviewerId
+          })
+          .eq('id', id);
 
-        // Create user account
-        const { error: userError } = await supabase
-          .from('users')
-          .insert({
-            id: crypto.randomUUID(),
-            username: application.username,
-            password: application.password,
-            name: application.contactPerson,
-            role: 'S',
-            telegram_chat_id: application.telegramChatId
-          });
-
-        if (userError) throw userError;
+        if (updateError) throw updateError;
       }
-
-      // Update application status
-      const { error: updateError } = await supabase
-        .from('supplier_applications')
-        .update({
-          status: approved ? 'approved' : 'rejected',
-          review_notes: notes,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewerId
-        })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
 
       // Send notification to supplier
       if (application.telegramChatId) {

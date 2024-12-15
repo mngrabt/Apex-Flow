@@ -2,7 +2,7 @@ import { X, FileText, Download, ListTodo } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Task } from '../../types';
 import { format } from 'date-fns';
-import InfoBlock from '../shared/InfoBlock';
+import { useAuthStore } from '../../store/auth';
 
 interface TaskListProps {
   tasks: Task[];
@@ -11,6 +11,10 @@ interface TaskListProps {
 
 export default function TaskList({ tasks, onDelete }: TaskListProps) {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+
+  // Check if user is Abdurauf
+  const canCreateRequest = user?.id === '00000000-0000-0000-0000-000000000001';
 
   if (tasks.length === 0) {
     return (
@@ -36,7 +40,8 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
           name: task.name,
           description: task.description,
           documentUrl: task.documentUrl,
-          document: null
+          document: null,
+          taskToDelete: task.id
         }
       }
     });
@@ -106,14 +111,16 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
             </div>
 
             {/* Action Button */}
-            <button
-              onClick={() => handleCreateRequest(task)}
-              className="w-full bg-primary text-white rounded-2xl p-4 text-center
-                       hover:bg-primary/90 transition-all cursor-pointer
-                       text-sm font-medium"
-            >
-              Создать заявку
-            </button>
+            {canCreateRequest && (
+              <button
+                onClick={() => handleCreateRequest(task)}
+                className="w-full bg-primary text-white rounded-2xl p-4 text-center
+                         hover:bg-primary/90 transition-all cursor-pointer
+                         text-sm font-medium"
+              >
+                Создать заявку
+              </button>
+            )}
           </div>
         </div>
       ))}

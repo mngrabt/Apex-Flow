@@ -70,7 +70,7 @@ ${items}
 
 Согласование изменений -- нет.
 
-На рассмотрение закуп��чной комиссии поступили коммерческие предложения от ${tender.suppliers.length} (${tender.suppliers.length === 2 ? 'двух' : tender.suppliers.length === 3 ? 'трех' : 'четырех'}) организаций по каждому наименованию товара:
+На рассмотрение закупочной комиссии поступили коммерческие предложения от ${tender.suppliers.length} (${tender.suppliers.length === 2 ? 'двух' : tender.suppliers.length === 3 ? 'трех' : 'четырех'}) организаций по каждому наименованию товара:
 
 ${suppliersList}
 
@@ -173,7 +173,7 @@ export function generateRequestTemplate(request: Request): string {
             <th style="width: 15%;">Лот (описание)<br>Объекта</th>
             <th style="width: 15%;">начальный срок<br>(периоды)<br>поставки<br>(выполнения<br>работ, услуг)</th>
             <th style="width: 10%;">ед.изм</th>
-            <th style="width: 15%;">��бъем<br>(количество)</th>
+            <th style="width: 15%;">Объем<br>(количество)</th>
         </tr>
         ${request.items.map((item, index) => `
         <tr>

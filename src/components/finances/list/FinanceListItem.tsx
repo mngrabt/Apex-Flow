@@ -4,6 +4,7 @@ import { Banknote, ArrowRightLeft, Hash, Download } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useFinanceStore } from '../../../store/finance';
+import { useAuthStore } from '../../../store/auth';
 
 interface InfoBlockProps {
   label: string;
@@ -129,6 +130,8 @@ export default function FinanceListItem({
   onSubmit,
   onPaid
 }: FinanceListItemProps) {
+  const user = useAuthStore(state => state.user);
+  const isSherzod = user?.id === '00000000-0000-0000-0000-000000000009';
   const [isNumberModalOpen, setIsNumberModalOpen] = useState(false);
   const [localNumber, setLocalNumber] = useState(protocol.number);
   const { downloadArchive } = useFinanceStore();
@@ -285,7 +288,7 @@ export default function FinanceListItem({
               {!localNumber ? 'Номер протокола не указан' : 'Отправить на оплату'}
             </button>
           )}
-          {(view === 'waiting' && onPaid) && (
+          {(view === 'waiting' && onPaid && isSherzod) && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

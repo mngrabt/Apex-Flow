@@ -10,8 +10,8 @@ export default function PrivateRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  // Allow access to protocol details for everyone
-  if (location.pathname.startsWith('/protocols/')) {
+  // Allow access to protocol details and cash request details for everyone
+  if (location.pathname.startsWith('/protocols/') || location.pathname.startsWith('/cash-requests/')) {
     return <Outlet />;
   }
 

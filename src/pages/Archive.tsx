@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 import { useArchiveStore } from '../store/archive';
 import { useRequestStore } from '../store/request';
 import { useTenderStore } from '../store/tender';
@@ -15,11 +15,14 @@ type ContextType = {
 type ArchiveView = 'protocols' | 'cash';
 
 export default function Archive() {
+  const location = useLocation();
   const { archivedProtocols, fetchArchivedProtocols } = useArchiveStore();
   const { requests, fetchRequests } = useRequestStore();
   const { tenders, fetchTenders } = useTenderStore();
   const [selectedProtocolId, setSelectedProtocolId] = useState<string | null>(null);
-  const [view, setView] = useState<ArchiveView>('protocols');
+  const [view, setView] = useState<ArchiveView>(
+    (location.state?.view as ArchiveView) || 'protocols'
+  );
   const [isLoading, setIsLoading] = useState(true);
   const { searchQuery } = useOutletContext<ContextType>();
 
@@ -39,6 +42,16 @@ export default function Archive() {
     };
     loadData();
   }, [fetchArchivedProtocols, fetchRequests, fetchTenders]);
+
+  // Set initial view based on available protocols
+  useEffect(() => {
+    if (!isLoading) {
+      const hasProtocols = archivedProtocols.some(p => p.type !== 'cash');
+      if (!hasProtocols) {
+        setView('cash');
+      }
+    }
+  }, [isLoading, archivedProtocols]);
 
   if (isLoading) {
     return (
@@ -129,6 +142,7 @@ export default function Archive() {
         searchQuery={searchQuery}
         requests={requests}
         tenders={tenders}
+        view={view}
       />
     </div>
   );

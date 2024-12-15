@@ -14,19 +14,36 @@ interface InfoBlockProps {
 
 const InfoBlock = ({ label, value, onClick }: InfoBlockProps) => {
   const Component = onClick ? 'button' : 'div';
+  const user = useAuthStore(state => state.user);
+  const isDinara = user?.id === '00000000-0000-0000-0000-000000000006';
+  const isNoNumber = isDinara && label === 'Номер' && value === 'Не указан';
   return (
     <Component
       onClick={onClick}
       className={`
         bg-gray-50 rounded-2xl p-4 text-center
         ${onClick ? 'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-200' : ''}
+        ${isNoNumber ? 'animate-pulse-orange' : ''}
       `}
     >
-      <div className="text-sm font-medium text-gray-900">{value}</div>
+      <div className={`text-sm font-medium ${isNoNumber ? 'text-orange-500' : 'text-gray-900'}`}>{value}</div>
       <div className="text-xs text-gray-500 mt-1">{label}</div>
     </Component>
   );
 };
+
+// Add keyframes for orange pulse animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse-orange {
+    0%, 100% { background-color: rgb(249 115 22 / 0.1); }
+    50% { background-color: rgb(249 115 22 / 0.2); }
+  }
+  .animate-pulse-orange {
+    animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+`;
+document.head.appendChild(style);
 
 interface ProtocolNumberModalProps {
   isOpen: boolean;

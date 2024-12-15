@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import JSZip from 'jszip';
 import { generateProtocolTemplate } from '../utils/templates/protocolTemplate';
 import { generateRequestTemplate } from '../utils/templates/requestTemplate';
+import { generateCashRequestTemplate } from '../utils/templates/cashRequestTemplate';
 
 // Signature URLs for cash requests
 const SIGNATURE_URLS: Record<string, string> = {
@@ -39,81 +40,77 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   fetchArchivedProtocols: async () => {
     try {
       const { data: archived, error } = await supabase
-        .from('archived_protocols')
+        .from('protocols')
         .select(`
-          protocol_id,
-          created_at,
-          zip_url,
-          number,
-          protocol:protocols!archived_protocols_protocol_id_fkey(
+          id,
+          type,
+          status,
+          finance_status,
+          department,
+          archived_protocol:archived_protocols(
+            created_at,
+            zip_url,
+            number
+          ),
+          signatures:protocol_signatures(
+            user_id,
+            date
+          ),
+          tender:tenders!protocols_tender_id_fkey(
             id,
-            tender_id,
             request_id,
-            type,
             status,
-            finance_status,
-            number,
-            department,
-            signatures:protocol_signatures(
-              user_id,
-              date
-            ),
-            tender:tenders!protocols_tender_id_fkey(
+            winner_id,
+            winner_reason,
+            created_at,
+            suppliers:suppliers!suppliers_tender_id_fkey(
               id,
-              request_id,
-              status,
-              winner_id,
-              winner_reason,
-              created_at,
-              suppliers:suppliers!suppliers_tender_id_fkey(
-                id,
-                company_name,
-                contact_person,
-                contact_number,
-                delivery_time,
-                price_per_unit,
-                price,
-                include_tax,
-                proposal_url,
-                created_at
-              ),
-              request:requests!tenders_request_id_fkey(
-                id,
-                number,
-                date,
-                department,
-                categories,
-                document_url,
-                status,
-                created_at,
-                created_by,
-                items:request_items(
-                  id,
-                  name,
-                  description,
-                  object_type,
-                  unit_type,
-                  quantity,
-                  deadline
-                )
-              )
+              company_name,
+              contact_person,
+              contact_number,
+              delivery_time,
+              price_per_unit,
+              price,
+              include_tax,
+              proposal_url,
+              created_at
             ),
-            request:requests!protocols_request_id_fkey(
+            request:requests!tenders_request_id_fkey(
               id,
               number,
               date,
               department,
+              categories,
+              document_url,
               status,
               created_at,
               created_by,
-              categories,
               items:request_items(
                 id,
                 name,
                 description,
+                object_type,
+                unit_type,
                 quantity,
-                total_sum
+                deadline
               )
+            )
+          ),
+          request:requests!protocols_request_id_fkey(
+            id,
+            number,
+            date,
+            department,
+            status,
+            created_at,
+            created_by,
+            categories,
+            items:request_items(
+              id,
+              name,
+              description,
+              quantity,
+              total_sum
             )
           )
         `)
@@ -121,42 +118,42 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
 
       if (error) throw error;
 
-      const archivedProtocols = (archived || []).map(archive => {
+      const archivedProtocols = (archived || []).map(protocol => {
         // Get the request's creation date based on protocol type
-        const requestCreatedAt = archive.protocol.type === 'cash' 
-          ? archive.protocol.request?.created_at 
-          : archive.protocol.tender?.request?.created_at;
+        const requestCreatedAt = protocol.type === 'cash' 
+          ? protocol.request?.created_at 
+          : protocol.tender?.request?.created_at;
 
         return {
-          id: archive.protocol.id,
-          tenderId: archive.protocol.tender_id,
-          type: archive.protocol.type || 'tender',
-          status: archive.protocol.status,
-          financeStatus: archive.protocol.finance_status,
-          createdAt: requestCreatedAt || archive.created_at, // Use request's creation date if available
-          zipUrl: archive.zip_url,
-          number: archive.number,
-          department: archive.protocol.department,
-          items: archive.protocol.type === 'cash' && archive.protocol.request ? 
-            archive.protocol.request.items.map(item => ({
+          id: protocol.id,
+          tenderId: protocol.tender?.id,
+          type: protocol.type || 'tender',
+          status: protocol.status,
+          financeStatus: protocol.finance_status,
+          createdAt: requestCreatedAt || protocol.archived_protocol?.created_at,
+          zipUrl: protocol.archived_protocol?.zip_url,
+          number: protocol.archived_protocol?.number,
+          department: protocol.department,
+          items: protocol.type === 'cash' && protocol.request ? 
+            protocol.request.items.map(item => ({
               id: item.id,
               name: item.name,
               description: item.description,
               quantity: item.quantity,
               totalSum: item.total_sum
             })) : undefined,
-          signatures: archive.protocol.signatures.map(sig => ({
+          signatures: protocol.signatures.map(sig => ({
             userId: sig.user_id,
             date: sig.date
           })),
-          tender: archive.protocol.tender ? {
-            id: archive.protocol.tender.id,
-            requestId: archive.protocol.tender.request_id,
-            status: archive.protocol.tender.status,
-            winnerId: archive.protocol.tender.winner_id || '',
-            winnerReason: archive.protocol.tender.winner_reason,
-            createdAt: archive.protocol.tender.request?.created_at || archive.protocol.tender.created_at,
-            suppliers: archive.protocol.tender.suppliers.map(supplier => ({
+          tender: protocol.tender ? {
+            id: protocol.tender.id,
+            requestId: protocol.tender.request_id,
+            status: protocol.tender.status,
+            winnerId: protocol.tender.winner_id || '',
+            winnerReason: protocol.tender.winner_reason,
+            createdAt: protocol.tender.request?.created_at || protocol.tender.created_at,
+            suppliers: protocol.tender.suppliers.map(supplier => ({
               id: supplier.id,
               companyName: supplier.company_name,
               contactPerson: supplier.contact_person,
@@ -168,17 +165,17 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
               proposalUrl: supplier.proposal_url,
               createdAt: supplier.created_at
             })),
-            request: archive.protocol.tender.request ? {
-              id: archive.protocol.tender.request.id,
-              number: archive.protocol.tender.request.number,
-              date: archive.protocol.tender.request.date,
-              department: archive.protocol.tender.request.department,
-              categories: archive.protocol.tender.request.categories || [],
-              documentUrl: archive.protocol.tender.request.document_url,
-              status: archive.protocol.tender.request.status,
-              createdAt: archive.protocol.tender.request.created_at,
-              createdBy: archive.protocol.tender.request.created_by,
-              items: archive.protocol.tender.request.items.map(item => ({
+            request: protocol.tender.request ? {
+              id: protocol.tender.request.id,
+              number: protocol.tender.request.number,
+              date: protocol.tender.request.date,
+              department: protocol.tender.request.department,
+              categories: protocol.tender.request.categories || [],
+              documentUrl: protocol.tender.request.document_url,
+              status: protocol.tender.request.status,
+              createdAt: protocol.tender.request.created_at,
+              createdBy: protocol.tender.request.created_by,
+              items: protocol.tender.request.items.map(item => ({
                 id: item.id,
                 name: item.name,
                 description: item.description,
@@ -189,17 +186,17 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
               }))
             } : undefined
           } : undefined,
-          request: archive.protocol.type === 'cash' && archive.protocol.request ? {
-            id: archive.protocol.request.id,
+          request: protocol.type === 'cash' && protocol.request ? {
+            id: protocol.request.id,
             type: 'cash',
-            number: archive.protocol.request.number,
-            date: archive.protocol.request.date,
-            department: archive.protocol.request.department,
-            status: archive.protocol.request.status,
-            createdAt: archive.protocol.request.created_at,
-            createdBy: archive.protocol.request.created_by,
-            categories: archive.protocol.request.categories || [],
-            items: archive.protocol.request.items.map(item => ({
+            number: protocol.request.number,
+            date: protocol.request.date,
+            department: protocol.request.department,
+            status: protocol.request.status,
+            createdAt: protocol.request.created_at,
+            createdBy: protocol.request.created_by,
+            categories: protocol.request.categories || [],
+            items: protocol.request.items.map(item => ({
               id: item.id,
               name: item.name,
               description: item.description,
@@ -235,72 +232,18 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
   downloadArchive: async (protocol: ArchivedProtocol, fileName: string) => {
     try {
       if (protocol.type === 'cash') {
-        // For cash requests, generate HTML from template
-        const response = await fetch('/templates/cash_request.html');
-        const template = await response.text();
-
-        // Get the first item from the request
-        const item = protocol.request?.items[0];
-        if (!item) throw new Error('No items found in request');
-
-        // Format date
-        const date = new Date(protocol.request?.date || '').toLocaleDateString('ru-RU');
-
-        // Function to generate signature image if user has signed
-        const getSignatureHtml = (userId: string) => {
-          if (protocol.signatures.some(sig => sig.userId === userId) && SIGNATURE_URLS[userId]) {
-            const position = SIGNATURE_POSITIONS[userId];
-            return `<div class="signature-image" style="position: absolute; left: calc(50% + ${position.x}px); top: ${position.y}px; z-index: 1; pointer-events: none; transform: translate(-50%, 0);">
-              <img src="${SIGNATURE_URLS[userId]}" alt="Подпись" style="height: 50px; margin: 0; padding: 0; display: block;">
-            </div>`;
-          }
-          return '';
-        };
-
-        // Add signature styles to the template
-        let html = template.replace('</style>', `
-          .signature-container {
-            position: relative;
-            margin-bottom: 1px;
-            white-space: nowrap;
-            line-height: 0;
-          }
-          .signature-image {
-            position: absolute;
-            z-index: 1;
-            pointer-events: none;
-            transform: translate(-50%, 0);
-          }
-          .signature-image img {
-            margin: 0;
-            padding: 0;
-            display: block;
-          }
-        </style>`);
-
-        // Replace placeholders in template
-        html = html
-          .replace('03.12.2024', date)
-          .replace('Наклейки на огнетушители', item.name)
-          .replace('8 шт.', `${item.quantity} шт.`)
-          .replace('100 000 сум (сто тысяч сум)', `${item.totalSum.toLocaleString('ru-RU')} сум`)
-          .replace('Приобретение и установка наклеек для маркировки огнетушителей', item.description || '');
-
-        // Add signature images
-        html = html
-          .replace('<p>Продакшен Менеджер<span class="sign-line"></span>А. Гани</p>', 
-            `<div class="signature-container">Продакшен Менеджер<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span>А. Гани</div>`)
-          .replace('<p>Член закупочной комиссии<span class="sign-line"></span>Ф.А. Бабаджанов</p>', 
-            `<div class="signature-container">Член закупочной комиссии<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000003')}</span>Ф.А. Бабаджанов</div>`)
-          .replace('<p>Генеральный директор<span class="sign-line"></span>А.Р. Раимжонов</p>', 
-            `<div class="signature-container">Генеральный директор<span class="sign-line">${getSignatureHtml('00000000-0000-0000-0000-000000000004')}</span>А.Р. Раимжонов</div>`);
+        // Generate HTML from template
+        const html = await generateCashRequestTemplate(protocol);
+        if (!html) {
+          throw new Error('Failed to generate cash request template');
+        }
 
         // Create blob and download
         const blob = new Blob([html], { type: 'text/html' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `cash_request_${protocol.request?.number || protocol.id}.html`;
+        a.download = `${protocol.request?.items[0]?.name || 'Наличные'}.html`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -353,7 +296,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
         const url = window.URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `protocol_${protocol.number || protocol.id}.zip`;
+        a.download = `${protocol.tender?.request?.items[0]?.name || 'Протокол'}.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

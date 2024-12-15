@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { CheckCircle2, Clock, RotateCcw, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useCalendarStore } from '../../store/calendar';
 import { useAuthStore } from '../../store/auth';
 import { useCalendarPermissions } from '../../hooks/useCalendarPermissions';
@@ -16,19 +17,22 @@ interface CompletedEventsProps {
 }
 
 export default function CompletedEvents({ events }: CompletedEventsProps) {
+  const navigate = useNavigate();
   const { undoEventComplete } = useCalendarStore();
   const user = useAuthStore(state => state.user);
   const { canManageEvents } = useCalendarPermissions();
   
   if (events.length === 0) return null;
 
+  const isAbdurauf = user?.id === '00000000-0000-0000-0000-000000000001';
+
   return (
     <div className="bg-white rounded-xl border border-gray-100">
       <div className="px-6 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -39,13 +43,16 @@ export default function CompletedEvents({ events }: CompletedEventsProps) {
               </p>
             </div>
           </div>
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 text-sm 
-                     font-medium rounded-lg hover:bg-green-100 transition-colors"
-          >
-            <span>Архив</span>
-            <ArrowUpRight className="w-4 h-4" />
-          </button>
+          {isAbdurauf && (
+            <button
+              onClick={() => navigate('/archive')}
+              className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary text-sm 
+                       font-medium rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              <span>Архив</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -58,7 +65,7 @@ export default function CompletedEvents({ events }: CompletedEventsProps) {
               className="group flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                 <div className="min-w-0">
                   <h3 className="text-sm font-medium text-gray-900 truncate">
                     {event.title}

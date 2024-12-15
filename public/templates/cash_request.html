@@ -2,10 +2,17 @@
 <html>
 <head>
     <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
-            margin: 40px;
+            width: 210mm;
+            height: 297mm;
+            margin: 20mm 20mm;
+            padding: 0;
         }
         .header {
             text-align: right;
@@ -48,7 +55,7 @@
 </head>
 <body>
     <div class="header">
-        03.12.2024<br>
+        {{date}}<br>
         Наблюдательный совет<br>
         ООО APEX DEVELOPMENT
     </div>
@@ -64,27 +71,21 @@
         <p>Просим выделить наличные средства на следующие расходы:</p>
 
         <div class="item">
-            <span class="bold">Наклейки на огнетушители</span><br>
-            Количество: <span class="bold">8 шт.</span><br>
-            Сумма: <span class="bold">100 000 сум (сто тысяч сум)</span><br>
-            Цель: Приобретение и установка наклеек для маркировки огнетушителей
+            <span class="bold">{{item_name}}</span><br>
+            Сумма: <span class="bold">{{total_sum}}</span><br>
+            Количество: <span class="bold">{{quantity}}</span><br>
+            Цель: {{description}}
         </div>
     </div>
 
     <div class="signature">
         <p>Подотчетное лицо Гани А.</p>
         
-        <p>
-            Продакшен Менеджер<span class="sign-line"></span>А. Гани
-        </p>
+        {{production_manager_signature}}
         
-        <p>
-            Член закупочной комиссии<span class="sign-line"></span>Ф.А. Бабаджанов
-        </p>
+        {{commission_member_signature}}
         
-        <p>
-            Генеральный директор<span class="sign-line"></span>А.Р. Раимжонов
-        </p>
+        {{general_director_signature}}
     </div>
 </body>
 </html>

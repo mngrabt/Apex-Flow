@@ -37,14 +37,19 @@ export default function EditEventModal({ event, onClose, onUpdateDate }: EditEve
   };
 
   const modal = (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-[9999] overflow-y-auto"
+      onClick={onClose}
+    >
       <div 
         className="fixed inset-0 bg-black/20 backdrop-blur-[2px] transition-opacity" 
-        onClick={onClose}
       />
       
       <div className="relative min-h-full flex items-center justify-center p-4">
-        <div className="relative w-full max-w-[360px] bg-white rounded-xl shadow-lg">
+        <div 
+          className="relative w-full max-w-[360px] bg-white rounded-xl shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
           <form onSubmit={handleSubmit}>
             {/* Header */}
             <div className="px-6 pt-5 pb-4">

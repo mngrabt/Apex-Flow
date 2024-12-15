@@ -32,19 +32,19 @@ export default function Login() {
       <div className="relative hidden lg:block bg-gradient-to-br from-primary/5 via-primary/10 to-transparent">
         <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-30" />
         
-        <div className="relative h-full flex flex-col items-center justify-center p-20">
+        <div className="relative h-full flex flex-col items-center justify-start pt-[230px] p-20">
           {/* Logo */}
           <img
             src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
             alt="ApexFlow"
-            className="h-32 mb-12"
+            className="h-[110px] mb-10"
           />
 
           {/* Hero Text */}
-          <h1 className="text-4xl font-bold text-gray-900 text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-900 text-center mb-4 leading-[1.2]">
             Управляйте закупками <br/> с легкостью
           </h1>
-          <p className="text-lg text-gray-600 text-center max-w-lg">
+          <p className="text-lg text-gray-600 text-center max-w-lg leading-relaxed">
             Автоматизируйте процессы, отслеживайте статусы и принимайте решения на основе данных в режиме реального времени
           </p>
 

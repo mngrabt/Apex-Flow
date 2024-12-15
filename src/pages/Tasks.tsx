@@ -15,6 +15,10 @@ export default function Tasks() {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
+  // Check if user is Umar or Akmal
+  const canCreateTask = user?.id === '00000000-0000-0000-0000-000000000007' || // Umar
+                       user?.id === '00000000-0000-0000-0000-000000000008';    // Akmal
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -75,15 +79,17 @@ export default function Tasks() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className={styles.components.buttonPrimary}
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Новая задача
-          </button>
-        </div>
+        {canCreateTask && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className={styles.components.buttonPrimary}
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Новая задача
+            </button>
+          </div>
+        )}
       </div>
 
       {Array.isArray(tasks) && tasks.length > 0 ? (

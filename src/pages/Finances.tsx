@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useLocation } from 'react-router-dom';
 import { useFinanceStore } from '../store/finance';
+import { useAuthStore } from '../store/auth';
 import { styles } from '../utils/styleConstants';
 import FinanceList from '../components/finances/FinanceList';
 import FinanceHeader from '../components/finances/FinanceHeader';
@@ -13,17 +14,27 @@ interface ContextType {
 }
 
 export default function Finances() {
-  const [view, setView] = useState<'not_submitted' | 'waiting' | 'paid'>('not_submitted');
+  const user = useAuthStore(state => state.user);
+  const location = useLocation();
+  const isSherzod = user?.id === '00000000-0000-0000-0000-000000000009';
+  const isUmarali = user?.id === '00000000-0000-0000-0000-000000000005';
+  
+  // Set initial view - use location state if available, otherwise default based on user
+  const [view, setView] = useState<'not_submitted' | 'waiting' | 'paid'>(
+    location.state?.view || (isSherzod ? 'waiting' : 'not_submitted')
+  );
   const [submittingProtocolId, setSubmittingProtocolId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { protocols, fetchProtocols, submitProtocol, markAsPaid } = useFinanceStore();
   const { searchQuery } = useOutletContext<ContextType>();
 
   const { hasNotSubmitted, hasWaiting, hasPaid } = useMemo(() => ({
-    hasNotSubmitted: protocols.some(p => !p.submittedAt),
-    hasWaiting: protocols.some(p => p.submittedAt && !p.paidAt),
-    hasPaid: protocols.some(p => p.paidAt)
-  }), [protocols]);
+    // For Sherzod, always return false for hasNotSubmitted to hide that view
+    hasNotSubmitted: isSherzod ? false : protocols.some(p => !p.submittedAt),
+    // For Umarali, always return false for hasWaiting and hasPaid to hide those views
+    hasWaiting: isUmarali ? false : protocols.some(p => p.submittedAt && !p.paidAt),
+    hasPaid: isUmarali ? false : protocols.some(p => p.paidAt)
+  }), [protocols, isSherzod, isUmarali]);
 
   const getProtocolName = useCallback((protocol: Protocol) => {
     if (protocol.type === 'cash' && protocol.request?.items?.[0]) {
@@ -46,7 +57,6 @@ export default function Finances() {
       await submitProtocol(id, urgency);
       await fetchProtocols();
       setSubmittingProtocolId(null);
-      setView('waiting');
     } catch (error) {
       console.error('Error submitting protocol:', error);
     }

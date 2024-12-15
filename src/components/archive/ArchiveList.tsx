@@ -8,13 +8,15 @@ interface ArchiveListProps {
   searchQuery?: string;
   requests: Request[];
   tenders: Tender[];
+  view: 'protocols' | 'cash';
 }
 
 export default function ArchiveList({ 
   protocols, 
   searchQuery = '',
   requests,
-  tenders
+  tenders,
+  view
 }: ArchiveListProps) {
   const navigate = useNavigate();
 
@@ -63,6 +65,18 @@ export default function ArchiveList({
     );
   }
 
+  const handleProtocolClick = (protocol: ArchivedProtocol) => {
+    if (protocol.type === 'cash' && protocol.request) {
+      navigate(`/cash-requests/${protocol.request.id}`, {
+        state: { from: 'archive', view }
+      });
+    } else {
+      navigate(`/protocols/${protocol.id}`, {
+        state: { from: 'archive', view }
+      });
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
       {sortedProtocols.map((protocol) => (
@@ -70,7 +84,7 @@ export default function ArchiveList({
           key={protocol.id}
           protocol={protocol}
           requestName={getRequestName(protocol)}
-          onClick={() => navigate(`/protocols/${protocol.id}`)}
+          onClick={() => handleProtocolClick(protocol)}
         />
       ))}
     </div>

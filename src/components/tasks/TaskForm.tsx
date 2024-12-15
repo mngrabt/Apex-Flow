@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/auth';
 import { useTaskStore } from '../../store/task';
 import { User } from '../../types';
 import { styles } from '../../utils/styleConstants';
+import { supabase } from '../../lib/supabase';
 
 interface TaskFormProps {
   onClose: () => void;
@@ -11,7 +12,7 @@ interface TaskFormProps {
 
 export default function TaskForm({ onClose }: TaskFormProps) {
   const user = useAuthStore((state) => state.user) as User;
-  const { addTask } = useTaskStore();
+  const { createTask } = useTaskStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,15 +41,35 @@ export default function TaskForm({ onClose }: TaskFormProps) {
       setIsSubmitting(true);
       setError(null);
 
+      let documentUrl = formData.documentUrl;
+
+      // Upload document if exists
+      if (formData.document) {
+        const fileExt = formData.document.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `tasks/${fileName}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('documents')
+          .upload(filePath, formData.document);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+
+        documentUrl = publicUrl;
+      }
+
       const taskData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        documentUrl: formData.documentUrl,
-        document: formData.document,
+        documentUrl,
         createdBy: user.id
       };
 
-      await addTask(taskData);
+      await createTask(taskData);
       onClose();
     } catch (err) {
       console.error('Error submitting task:', err);
@@ -124,7 +145,7 @@ export default function TaskForm({ onClose }: TaskFormProps) {
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     required
                     rows={4}
-                    className={`${styles.input} resize-none`}
+                    className={`${styles.input} resize-none pt-[0.7rem]`}
                     placeholder="Введите описание задачи"
                   />
                 </div>

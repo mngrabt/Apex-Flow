@@ -6,6 +6,7 @@ import { Eye, EyeOff, ArrowLeft, HelpCircle, Upload, Trash2, Check, ChevronDown,
 import { styles } from '../utils/styleConstants';
 import { verifyTelegramChatId } from '../services/telegram';
 import { setupWebhook } from '../services/telegramWebhook';
+import { sendNotification } from '../services/notificationService';
 
 // Categories for selection
 const CATEGORIES = [
@@ -110,6 +111,7 @@ export default function Register() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
+    
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ 
@@ -130,12 +132,15 @@ export default function Register() {
 
       setFormData(prev => ({ ...prev, [name]: formatted }));
     } else if (name === 'inn') {
-      // INN formatting logic
-      const digitsOnly = value.replace(/\D/g, '').slice(0, 9); // Only allow 9 digits
+      // Only allow digits and limit to 9 characters
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 9);
+      
+      // Format with spaces after every 3 digits
       let formatted = '';
       if (digitsOnly.length > 0) formatted += digitsOnly.slice(0, 3);
       if (digitsOnly.length > 3) formatted += ' ' + digitsOnly.slice(3, 6);
       if (digitsOnly.length > 6) formatted += ' ' + digitsOnly.slice(6, 9);
+      
       setFormData(prev => ({ ...prev, [name]: formatted }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -270,6 +275,14 @@ export default function Register() {
         throw updateError;
       }
 
+      // Send notification to Abdurauf about new application
+      await sendNotification('NEW_APPLICATION', {
+        companyName: formData.companyName,
+        userIds: [
+          '00000000-0000-0000-0000-000000000001' // Abdurauf
+        ]
+      });
+
       // Show success message
       setIsSuccess(true);
       
@@ -328,8 +341,10 @@ export default function Register() {
       requiredDocs.push(formData.vatCertificate);
     }
 
-    if (!formData.inn || requiredDocs.some(doc => !doc)) {
-      setError('Пожалуйста, загрузите все необходимые документы');
+    // Check INN length without spaces
+    const innDigits = formData.inn.replace(/\D/g, '');
+    if (!formData.inn || innDigits.length !== 9 || requiredDocs.some(doc => !doc)) {
+      setError(innDigits.length !== 9 ? 'ИНН должен содержать ровно 9 цифр' : 'Пожалуйста, загрузите все необходимые документы');
       return false;
     }
     return true;
@@ -483,6 +498,14 @@ export default function Register() {
               throw updateError;
             }
 
+            // Send notification to Abdurauf about new application
+            await sendNotification('NEW_APPLICATION', {
+              companyName: updatedFormData.companyName,
+              userIds: [
+                '00000000-0000-0000-0000-000000000001' // Abdurauf
+              ]
+            });
+
             // Show success message
             setIsSuccess(true);
             
@@ -527,30 +550,42 @@ export default function Register() {
     }
   }, [isSuccess, countdown, navigate]);
 
+  // Add effect to clear error messages after 5 seconds
+  useEffect(() => {
+    if (error || verificationError) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setVerificationError(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error, verificationError]);
+
   return (
     <div className="grid lg:grid-cols-[1fr_500px] h-screen">
       {/* Left Side - Hero Section */}
       <div className="relative hidden lg:block bg-gradient-to-br from-primary/5 via-primary/10 to-transparent">
         <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-30" />
         
-        <div className="relative h-full flex flex-col items-center justify-center p-20">
+        <div className="relative h-full flex flex-col items-center justify-start pt-[230px] p-20">
           {/* Logo */}
           <img
             src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
             alt="ApexFlow"
-            className="h-32 mb-12"
+            className="h-[110px] mb-10"
           />
 
           {/* Hero Text */}
-          <h1 className="text-4xl font-bold text-gray-900 text-center mb-6">
+          <h1 className="text-4xl font-bold text-gray-900 text-center mb-4 leading-[1.2]">
             Добро пожаловать в <br/> ApexFlow
           </h1>
-          <p className="text-lg text-gray-600 text-center max-w-lg mb-8">
+          <p className="text-lg text-gray-600 text-center max-w-lg leading-relaxed">
             Создайте аккаунт, чтобы полуить доступ к системе управления закупками
           </p>
 
           {/* Steps */}
-          <div className="flex items-center gap-4 text-sm font-medium">
+          <div className="flex items-center gap-4 text-sm font-medium mt-12">
             <div className={`
               h-10 w-10 rounded-xl flex items-center justify-center
               ${step === 1 ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}
@@ -979,6 +1014,7 @@ export default function Register() {
                           onChange={handleInputChange}
                           className={styles.input}
                           placeholder="Введите ИНН"
+                          minLength={11}
                           maxLength={11}
                           required
                         />
@@ -1042,7 +1078,7 @@ export default function Register() {
                                       {hasDownloadedForm ? 'Загрузить анкету' : 'Скачать анкету'}
                                     </div>
                                     <div className={`text-xs ${hasDownloadedForm ? 'text-gray-500' : 'text-white/80'}`}>
-                                      {hasDownloadedForm ? 'PDF, максимум 10MB' : 'Заполните и загр��зите'}
+                                      {hasDownloadedForm ? 'PDF, максимум 10MB' : 'Заполните и загрузите'}
                                     </div>
                                   </div>
                                   {hasDownloadedForm && (

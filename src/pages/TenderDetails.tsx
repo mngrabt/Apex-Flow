@@ -293,114 +293,9 @@ export default function TenderDetails() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Request Information - First on mobile */}
-        <div className="lg:col-start-2">
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Информация о заявке</h2>
-              {request.documentUrl && (
-                <a
-                  href={request.documentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
-                >
-                  <Download className="w-4 h-4" />
-                  Скачать ТЗ
-                </a>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Название</div>
-                    <div className="font-medium text-gray-900">
-                      {request.items[0]?.name}
-                    </div>
-                  </div>
-                  {request.items[0]?.description && (
-                    <div>
-                      <div className="text-sm text-gray-500 mb-1">Описание</div>
-                      <div className="font-medium text-gray-900">
-                        {request.items[0]?.description}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Количество</div>
-                  <div className="font-medium text-gray-900">
-                    {request.items[0]?.quantity} {request.items[0]?.unitType}
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Срок поставки</div>
-                  <div className="font-medium text-gray-900">
-                    {request.items[0]?.deadline} дней
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Тип объекта</div>
-                  <div className="font-medium text-gray-900">
-                    {request.items[0]?.objectType === 'office' ? 'Офис' : 'Стройка'}
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Дата создания</div>
-                  <div className="font-medium text-gray-900">
-                    {format(new Date(request.createdAt), 'd MMMM yyyy', { locale: ru })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tender Details - Second on mobile */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm mt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Детали тендера</h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="text-sm text-gray-500 mb-1">Поставщики</div>
-                <div className="font-medium text-gray-900">
-                  {tender.suppliers?.length || 0} из 10
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="text-sm text-gray-500 mb-1">Дата создания</div>
-                <div className="font-medium text-gray-900">
-                  {format(new Date(tender.createdAt), 'd MMMM yyyy', { locale: ru })}
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="text-sm text-gray-500 mb-1">Осталось дней</div>
-                <div className={`font-medium ${getDaysLeft(tender.createdAt) === 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                  {getDaysLeft(tender.createdAt)} {getDaysLeft(tender.createdAt) === 1 ? 'день' : getDaysLeft(tender.createdAt) >= 2 && getDaysLeft(tender.createdAt) <= 4 ? 'дня' : 'дней'}
-                </div>
-              </div>
-            </div>
-
-            {/* Add Supplier/Offer Button */}
-            {(!isSupplier || !hasExistingOffer) && (tender.suppliers || []).length < 10 && (
-              <button
-                onClick={() => setIsAddingSupplier(true)}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl mt-6
-                         text-sm font-medium transition-all
-                         bg-primary text-white hover:bg-primary/90 active:bg-primary/80"
-              >
-                <UserPlus className="w-4 h-4" />
-                {isSupplier ? 'Добавить предложение' : 'Добавить поставщика'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Suppliers List - Last on mobile */}
-        <div className="lg:col-start-1 lg:row-start-1">
+        {/* Left Column - Suppliers List */}
+        <div className="space-y-4 order-3 lg:order-1">
+          {/* Suppliers List */}
           <div className="space-y-4">
             {visibleSuppliers?.length === 0 ? (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
@@ -587,6 +482,153 @@ export default function TenderDetails() {
             )}
           </div>
         </div>
+
+        {/* Right Column - Info Blocks */}
+        <div className="space-y-4 lg:order-2">
+          {/* Tender Details - Desktop */}
+          <div className="hidden lg:block bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Детали тендера</h2>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Поставщики</div>
+                <div className="font-medium text-gray-900">
+                  {tender.suppliers?.length || 0} из 10
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Дата создания</div>
+                <div className="font-medium text-gray-900">
+                  {format(new Date(tender.createdAt), 'd MMMM yyyy', { locale: ru })}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Осталось дней</div>
+                <div className={`font-medium ${getDaysLeft(tender.createdAt) === 0 ? 'text-red-500' : 'text-gray-900'}`}>
+                  {getDaysLeft(tender.createdAt)} {getDaysLeft(tender.createdAt) === 1 ? 'день' : getDaysLeft(tender.createdAt) >= 2 && getDaysLeft(tender.createdAt) <= 4 ? 'дня' : 'дней'}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Supplier/Offer Button */}
+            {(!isSupplier || !hasExistingOffer) && (tender.suppliers || []).length < 10 && (
+              <button
+                onClick={() => setIsAddingSupplier(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl mt-6
+                         text-sm font-medium transition-all
+                         bg-primary text-white hover:bg-primary/90 active:bg-primary/80"
+              >
+                <UserPlus className="w-4 h-4" />
+                {isSupplier ? 'Добавить предложение' : 'Добавить поставщика'}
+              </button>
+            )}
+          </div>
+
+          {/* Request Information */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm order-1 lg:order-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Информация о заявке</h2>
+              {request.documentUrl && (
+                <a
+                  href={request.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+                >
+                  <Download className="w-4 h-4" />
+                  Скачать ТЗ
+                </a>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Название</div>
+                    <div className="font-medium text-gray-900">
+                      {request.items[0]?.name}
+                    </div>
+                  </div>
+                  {request.items[0]?.description && (
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Описание</div>
+                      <div className="font-medium text-gray-900">
+                        {request.items[0]?.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Количество</div>
+                  <div className="font-medium text-gray-900">
+                    {request.items[0]?.quantity} {request.items[0]?.unitType}
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Срок поставки</div>
+                  <div className="font-medium text-gray-900">
+                    {request.items[0]?.deadline} дней
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Тип объекта</div>
+                  <div className="font-medium text-gray-900">
+                    {request.items[0]?.objectType === 'office' ? 'Офис' : 'Стройка'}
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-sm text-gray-500 mb-1">Дата создания</div>
+                  <div className="font-medium text-gray-900">
+                    {format(new Date(request.createdAt), 'd MMMM yyyy', { locale: ru })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tender Details - Mobile */}
+        <div className="lg:hidden order-2">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Детали тендера</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Поставщики</div>
+                <div className="font-medium text-gray-900">
+                  {tender.suppliers?.length || 0} из 10
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Дата создания</div>
+                <div className="font-medium text-gray-900">
+                  {format(new Date(tender.createdAt), 'd MMMM yyyy', { locale: ru })}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="text-sm text-gray-500 mb-1">Осталось дней</div>
+                <div className={`font-medium ${getDaysLeft(tender.createdAt) === 0 ? 'text-red-500' : 'text-gray-900'}`}>
+                  {getDaysLeft(tender.createdAt)} {getDaysLeft(tender.createdAt) === 1 ? 'день' : getDaysLeft(tender.createdAt) >= 2 && getDaysLeft(tender.createdAt) <= 4 ? 'дня' : 'дней'}
+                </div>
+              </div>
+            </div>
+
+            {/* Add Supplier/Offer Button */}
+            {(!isSupplier || !hasExistingOffer) && (tender.suppliers || []).length < 10 && (
+              <button
+                onClick={() => setIsAddingSupplier(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl mt-6
+                         text-sm font-medium transition-all
+                         bg-primary text-white hover:bg-primary/90 active:bg-primary/80"
+              >
+                <UserPlus className="w-4 h-4" />
+                {isSupplier ? 'Добавить предложение' : 'Добавить поставщика'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
@@ -625,7 +667,7 @@ export default function TenderDetails() {
       {deletingFileId && (
         <ConfirmModal
           title="Удаление файла"
-          message="Вы уверены, ч��о хотите удалить коммерческое предложение?"
+          message="Вы уверены, что хотите удалить коммерческое предложение?"
           confirmText="Удалить"
           cancelText="Отмена"
           onConfirm={() => handleFileDelete(deletingFileId)}

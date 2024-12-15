@@ -40,20 +40,32 @@ export default function Header({ children, searchQuery, onSearchChange }: Header
         )}
 
         <div className="flex items-center">
-          <button 
-            onClick={switchUser}
-            className="flex items-center px-4 py-2 rounded-xl hover:bg-gray-50/80 
-                     transition-all duration-200 group"
-          >
-            <div className="text-right">
-              <p className="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                {user?.name || ''}
-              </p>
-              <p className="text-xs text-gray-500 group-hover:text-primary/80 transition-colors">
-                {user?.displayRole || 'Подрядчик'}
-              </p>
+          {user?.id === '00000000-0000-0000-0000-000000000001' ? (
+            <button 
+              className="flex items-center px-4 py-2 rounded-xl hover:bg-gray-50/80 
+                       transition-all duration-200 group cursor-pointer"
+            >
+              <div className="text-right">
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                  {user?.name || ''}
+                </p>
+                <p className="text-xs text-gray-500 group-hover:text-primary/80 transition-colors">
+                  {user?.displayRole || 'Подрядчик'}
+                </p>
+              </div>
+            </button>
+          ) : (
+            <div className="flex items-center px-4 py-2">
+              <div className="text-right">
+                <p className="text-sm font-semibold text-gray-900">
+                  {user?.name || ''}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user?.displayRole || 'Подрядчик'}
+                </p>
+              </div>
             </div>
-          </button>
+          )}
         </div>
       </div>
     </header>

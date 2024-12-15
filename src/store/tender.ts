@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 import { Tender, Supplier } from '../types';
 import { supabase } from '../lib/supabase';
+import { sendNotification } from '../services/notificationService';
 
 interface TenderState {
   tenders: Tender[];
   fetchTenders: () => Promise<void>;
-  addSupplier: (tenderId: string, supplier: Omit<Supplier, 'id'>) => Promise<void>;
+  addSupplier: (tenderId: string, supplier: Omit<Supplier, 'id' | 'createdAt'>) => Promise<void>;
   updateSupplier: (tenderId: string, supplierId: string, updates: Partial<Supplier>) => Promise<void>;
   deleteSupplier: (tenderId: string, supplierId: string) => Promise<void>;
   selectWinner: (tenderId: string, winnerId: string, winnerReason: string, reserveId?: string, reserveReason?: string) => Promise<void>;
   getTenderById: (tenderId: string) => Tender | undefined;
   deleteTender: (tenderId: string) => Promise<void>;
+  createTender: (requestId: string) => Promise<void>;
 }
 
 interface RawSupplier {
@@ -150,7 +152,7 @@ export const useTenderStore = create<TenderState>((set, get) => ({
 
   addSupplier: async (tenderId, supplier) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('suppliers')
         .insert({
           tender_id: tenderId,
@@ -163,10 +165,27 @@ export const useTenderStore = create<TenderState>((set, get) => ({
           include_tax: supplier.includeTax,
           proposal_url: supplier.proposalUrl,
           created_by: supplier.createdBy,
-          created_at: supplier.createdAt
-        });
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Get tender data for notification
+      const { data: request } = await supabase
+        .from('requests')
+        .select('items:request_items(*)')
+        .eq('id', get().tenders.find(t => t.id === tenderId)?.requestId)
+        .single();
+
+      // Send notification - the service will handle sending to both Abdurauf and Fozil
+      if (request?.items?.[0]) {
+        await sendNotification('SUPPLIER_ADDED_TO_TENDER', {
+          supplierName: supplier.companyName,
+          tenderName: request.items[0].name
+        });
+      }
 
       await get().fetchTenders();
     } catch (error) {
@@ -179,14 +198,47 @@ export const useTenderStore = create<TenderState>((set, get) => ({
     try {
       const updateData: any = {};
       
-      if (updates.companyName !== undefined) updateData.company_name = updates.companyName;
-      if (updates.contactPerson !== undefined) updateData.contact_person = updates.contactPerson;
-      if (updates.contactNumber !== undefined) updateData.contact_number = updates.contactNumber;
-      if (updates.deliveryTime !== undefined) updateData.delivery_time = updates.deliveryTime;
-      if (updates.pricePerUnit !== undefined) updateData.price_per_unit = updates.pricePerUnit;
-      if (updates.price !== undefined) updateData.price = updates.price;
-      if (updates.includeTax !== undefined) updateData.include_tax = updates.includeTax;
-      if (updates.proposalUrl !== undefined) updateData.proposal_url = updates.proposalUrl;
+      // Get current supplier data before update
+      const tender = get().tenders.find(t => t.id === tenderId);
+      const currentSupplier = tender?.suppliers?.find(s => s.id === supplierId);
+      if (!currentSupplier) throw new Error('Supplier not found');
+
+      // Build update data and track changes
+      const changes: string[] = [];
+      if (updates.companyName !== undefined) {
+        updateData.company_name = updates.companyName;
+        if (updates.companyName !== currentSupplier.companyName) {
+          changes.push(`название компании: ${currentSupplier.companyName} ➜ ${updates.companyName}`);
+        }
+      }
+      if (updates.contactPerson !== undefined) {
+        updateData.contact_person = updates.contactPerson;
+        if (updates.contactPerson !== currentSupplier.contactPerson) {
+          changes.push(`контактное лицо: ${currentSupplier.contactPerson} ➜ ${updates.contactPerson}`);
+        }
+      }
+      if (updates.contactNumber !== undefined) {
+        updateData.contact_number = updates.contactNumber;
+        if (updates.contactNumber !== currentSupplier.contactNumber) {
+          changes.push(`контактный номер: ${currentSupplier.contactNumber} ➜ ${updates.contactNumber}`);
+        }
+      }
+      // Update commercial offer fields without tracking changes
+      if (updates.deliveryTime !== undefined) {
+        updateData.delivery_time = updates.deliveryTime;
+      }
+      if (updates.pricePerUnit !== undefined) {
+        updateData.price_per_unit = updates.pricePerUnit;
+      }
+      if (updates.price !== undefined) {
+        updateData.price = updates.price;
+      }
+      if (updates.includeTax !== undefined) {
+        updateData.include_tax = updates.includeTax;
+      }
+      if (updates.proposalUrl !== undefined) {
+        updateData.proposal_url = updates.proposalUrl;
+      }
 
       const { error } = await supabase
         .from('suppliers')
@@ -195,6 +247,22 @@ export const useTenderStore = create<TenderState>((set, get) => ({
         .eq('tender_id', tenderId);
 
       if (error) throw error;
+
+      // Get request data for notification
+      const { data: request } = await supabase
+        .from('requests')
+        .select('items:request_items(*)')
+        .eq('id', tender?.requestId)
+        .single();
+
+      // Send notification about supplier update only if there were actual non-commercial changes
+      if (request?.items?.[0] && changes.length > 0) {
+        await sendNotification('SUPPLIER_UPDATED_IN_TENDER', {
+          supplierName: currentSupplier.companyName,
+          tenderName: request.items[0].name,
+          updatedFields: changes.join('\n')
+        });
+      }
 
       await get().fetchTenders();
     } catch (error) {
@@ -205,13 +273,46 @@ export const useTenderStore = create<TenderState>((set, get) => ({
 
   deleteSupplier: async (tenderId, supplierId) => {
     try {
-      const { error } = await supabase
+      // Get supplier and tender data before removal
+      const tender = get().tenders.find(t => t.id === tenderId);
+      const supplier = tender?.suppliers?.find(s => s.id === supplierId);
+
+      if (!tender || !supplier) {
+        console.error('Tender or supplier not found:', { tenderId, supplierId });
+        throw new Error('Tender or supplier not found');
+      }
+
+      // Delete the supplier
+      const { error: deleteError } = await supabase
         .from('suppliers')
         .delete()
         .eq('id', supplierId)
         .eq('tender_id', tenderId);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Error deleting supplier:', deleteError);
+        throw deleteError;
+      }
+
+      // Get request data for notification
+      const { data: request } = await supabase
+        .from('requests')
+        .select('items:request_items(*)')
+        .eq('id', tender.requestId)
+        .single();
+
+      // Send notification
+      if (request?.items?.[0]) {
+        console.log('Sending notification with data:', {
+          supplierName: supplier.companyName,
+          tenderName: request.items[0].name
+        });
+
+        await sendNotification('SUPPLIER_REMOVED_FROM_TENDER', {
+          supplierName: supplier.companyName,
+          tenderName: request.items[0].name
+        });
+      }
 
       await get().fetchTenders();
     } catch (error) {
@@ -222,8 +323,16 @@ export const useTenderStore = create<TenderState>((set, get) => ({
 
   selectWinner: async (tenderId: string, winnerId: string, winnerReason: string, reserveId?: string, reserveReason?: string) => {
     try {
+      const currentDate = new Date().toISOString();
+      const ABDURAUF_ID = '00000000-0000-0000-0000-000000000001';
+
+      // Get tender and winner data before update
+      const tender = get().tenders.find(t => t.id === tenderId);
+      const winner = tender?.suppliers?.find(s => s.id === winnerId);
+      const reserve = reserveId ? tender?.suppliers?.find(s => s.id === reserveId) : undefined;
+
       // Start a transaction
-      const { data: tender, error: tenderError } = await supabase
+      const { data: updatedTender, error: tenderError } = await supabase
         .from('tenders')
         .update({
           status: 'completed',
@@ -231,7 +340,7 @@ export const useTenderStore = create<TenderState>((set, get) => ({
           winner_reason: winnerReason,
           reserve_winner_id: reserveId || null,
           reserve_winner_reason: reserveReason || null,
-          updated_at: new Date().toISOString()
+          updated_at: currentDate
         })
         .eq('id', tenderId)
         .select()
@@ -242,6 +351,22 @@ export const useTenderStore = create<TenderState>((set, get) => ({
         throw tenderError;
       }
 
+      // Get request data for notification
+      const { data: request } = await supabase
+        .from('requests')
+        .select('items:request_items(*)')
+        .eq('id', tender?.requestId)
+        .single();
+
+      // Send notification about winner selection
+      if (request?.items?.[0] && winner) {
+        await sendNotification('TENDER_WINNER_SELECTED', {
+          tenderName: request.items[0].name,
+          winnerName: winner.companyName,
+          reserveName: reserve?.companyName
+        });
+      }
+
       // Create protocol
       const { data: protocol, error: protocolError } = await supabase
         .from('protocols')
@@ -250,7 +375,7 @@ export const useTenderStore = create<TenderState>((set, get) => ({
           type: 'tender',
           status: 'pending',
           finance_status: 'not_submitted',
-          created_at: new Date().toISOString()
+          created_at: currentDate
         })
         .select()
         .single();
@@ -259,6 +384,29 @@ export const useTenderStore = create<TenderState>((set, get) => ({
         console.error('Error creating protocol:', protocolError);
         throw protocolError;
       }
+
+      // Add Abdurauf's signature automatically since he approved the tender
+      const { error: signatureError } = await supabase
+        .from('protocol_signatures')
+        .insert({
+          protocol_id: protocol.id,
+          user_id: ABDURAUF_ID,
+          date: currentDate
+        });
+
+      if (signatureError) {
+        console.error('Error adding signature:', signatureError);
+        throw signatureError;
+      }
+
+      // Send notification to users who need to sign the protocol
+      if (request?.items?.[0]) {
+        await sendNotification('PROTOCOL_NEEDS_SIGNATURE', {
+          name: request.items[0].name
+        });
+      }
+
+      console.log('Added Abdurauf signature to protocol:', protocol.id);
 
       // Refresh tenders
       await get().fetchTenders();
@@ -292,6 +440,43 @@ export const useTenderStore = create<TenderState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Error deleting tender:', error);
+      throw error;
+    }
+  },
+
+  createTender: async (requestId: string) => {
+    try {
+      const { data: tender, error } = await supabase
+        .from('tenders')
+        .insert({
+          request_id: requestId,
+          status: 'active',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Get request data for notification
+      const { data: request } = await supabase
+        .from('requests')
+        .select('items:request_items(*)')
+        .eq('id', requestId)
+        .single();
+
+      // Send notification to relevant suppliers
+      if (request?.items?.[0]) {
+        // Send notification to suppliers and Fozil (handled in notificationService)
+        await sendNotification('NEW_TENDER', {
+          name: request.items[0].name,
+          categories: request.items[0].categories
+        });
+      }
+
+      await get().fetchTenders();
+    } catch (error) {
+      console.error('Error creating tender:', error);
       throw error;
     }
   }

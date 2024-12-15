@@ -98,7 +98,7 @@ export default function ProtocolSignatures({
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500 mt-0.5">
+                      <div className="text-sm text-gray-500 mt-0.5 hidden lg:block">
                         {signer.role}
                       </div>
                     </div>

@@ -75,13 +75,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (!user) return false;
     
     // Only count active requests
-    if (request.status === 'completed' || request.status === 'archived') {
+    if (request.status === 'completed' || request.status === 'archived' || request.status === 'tender' || request.status === 'protocol') {
       return false;
     }
 
-    // Check if user hasn't signed yet
-    return !request.signatures.some((sig: { userId: string }) => sig.userId === user.id);
+    // Skip if user has already signed
+    if (request.signatures.some(sig => sig.userId === user.id)) {
+      return false;
+    }
+
+    // For Fozil and Aziz, show all unsigned requests
+    if (user.id === '00000000-0000-0000-0000-000000000003' || // Fozil
+        user.id === '00000000-0000-0000-0000-000000000004') { // Aziz
+      return true;
+    }
+
+    return false;
   }).length;
+
+  // Log final count
+  console.log('Total requests needing signature:', requestsNeedingSignature);
 
   // Calculate protocols needing signature for current user
   const protocolsNeedingSignature = protocols.filter(protocol => {
@@ -93,8 +106,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       return false;
     }
 
+    // Exclude cash requests
+    if (protocol.type === 'cash') {
+      return false;
+    }
+
     // Check if user hasn't signed yet
-    return !protocol.signatures.some((sig: { userId: string }) => sig.userId === user.id);
+    return !(protocol.signatures || []).some((sig: { userId: string }) => sig.userId === user.id);
+  }).length;
+
+  // Calculate finance counters
+  const notSubmittedProtocols = protocols.filter(protocol => {
+    // Only count protocols that are not submitted to finance
+    if (protocol.financeStatus !== 'not_submitted') return false;
+    
+    // Exclude cash requests
+    if (protocol.type === 'cash') return false;
+    
+    // Only count protocols that have all required signatures
+    const hasAllSignatures = REQUIRED_SIGNATURES.every(requiredId => 
+      protocol.signatures.some(sig => sig.userId === requiredId)
+    );
+    
+    return hasAllSignatures;
+  }).length;
+
+  const waitingProtocols = protocols.filter(protocol => {
+    return protocol.financeStatus === 'waiting';
   }).length;
 
   // Calculate active tenders count based on user role
@@ -126,7 +164,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const protocolsWithoutNumber = archivedProtocols.filter(protocol => !protocol.number).length;
 
   // Use unscheduled events count for calendar badge
-  const unscheduledCount = unscheduledEvents.length;
+  const unscheduledCount = unscheduledEvents?.length || 0;
 
   if (!user) return null;
 
@@ -184,7 +222,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { 
           name: 'Финансы', 
           href: '/finances', 
-          icon: Briefcase
+          icon: Briefcase,
+          badge: user.id === '00000000-0000-0000-0000-000000000005' ? 
+                 (notSubmittedProtocols > 0 ? notSubmittedProtocols : undefined) : // Umarali
+                 user.id === '00000000-0000-0000-0000-000000000009' ? 
+                 (waitingProtocols > 0 ? waitingProtocols : undefined) : // Sherzod
+                 undefined
         }
       ].filter(item => hasAccess(user.id, item.href))
     },
@@ -206,7 +249,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           name: 'Архив', 
           href: '/archive', 
           icon: PackageSearch,
-          badge: protocolsWithoutNumber > 0 ? protocolsWithoutNumber : undefined
+          badge: isDinara && protocolsWithoutNumber > 0 ? protocolsWithoutNumber : undefined
         }
       ].filter(item => hasAccess(user.id, item.href))
     },

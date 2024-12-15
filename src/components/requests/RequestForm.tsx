@@ -14,6 +14,8 @@ interface RequestFormProps {
     description: string;
     documentUrl?: string;
     taskId?: string;
+    onSuccess?: () => void;
+    taskToDelete?: string;
   };
 }
 
@@ -47,7 +49,6 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
     description: initialData?.description || '',
     quantity: 0,
     totalSum: 0,
-    document: null as File | null,
   });
 
   // Handle click outside for category dropdown
@@ -185,6 +186,18 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
         });
       }
 
+      // Delete the task if taskToDelete is provided
+      if (initialData?.taskToDelete) {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', initialData.taskToDelete);
+          
+        if (error) {
+          console.error('Error deleting task:', error);
+        }
+      }
+      
       onClose(true);
     } catch (err) {
       console.error('Error submitting request:', err);
@@ -195,16 +208,30 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose(false);
+        }
+      }}
+    >
       <div 
         className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity" 
         onClick={handleBackdropClick}
       />
 
-      <div className="min-h-full flex items-center justify-center p-4">
-        <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl">
+      <div 
+        className="relative min-h-full w-full flex items-center justify-center p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose(false);
+          }
+        }}
+      >
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+          <div className="flex-shrink-0 flex items-center justify-between px-8 py-6 border-b border-gray-100">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
                 Новая заявка
@@ -221,8 +248,8 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-y-auto">
+            <div className="flex-1 p-8 space-y-6 overflow-y-auto">
               {/* Type Selector */}
               <div className="flex items-center justify-center">
                 <nav className="inline-flex p-1 bg-gray-100 rounded-xl">
@@ -601,35 +628,6 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* File Upload */}
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Документ
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="file"
-                        onChange={(e) => handleFileChange(e.target.files?.[0])}
-                        className="hidden"
-                        id="document-upload"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx"
-                      />
-                      <label
-                        htmlFor="document-upload"
-                        className="flex items-center gap-2 px-4 h-12 bg-gray-50 border border-gray-200 rounded-xl 
-                                 text-gray-900 hover:bg-gray-100 cursor-pointer transition-colors"
-                      >
-                        <Upload className="w-4 h-4" />
-                        <span>Загрузить документ</span>
-                      </label>
-                      {(requestType === 'transfer' ? transferFormData.document : cashFormData.document) && (
-                        <div className="flex-1 truncate text-sm text-gray-500">
-                          {(requestType === 'transfer' ? transferFormData.document : cashFormData.document)?.name}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

@@ -7,16 +7,12 @@ import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { styles } from '../utils/styleConstants';
 
 export default function Calendar() {
-  const { events, unscheduledEvents, fetchEvents } = useCalendarStore();
+  const { events, unscheduledEvents, completedEvents, fetchEvents } = useCalendarStore();
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
-
-  // Split events into active and completed
-  const activeEvents = events.filter(event => !event.completed);
-  const completedEvents = events.filter(event => event.completed);
 
   return (
     <div className={styles.padding.section}>
@@ -43,11 +39,13 @@ export default function Calendar() {
       <CalendarView
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
-        events={activeEvents}
+        events={events}
       />
 
       {/* Completed Events */}
-      <CompletedEvents events={completedEvents} />
+      {completedEvents.length > 0 && (
+        <CompletedEvents events={completedEvents} />
+      )}
     </div>
   );
 }

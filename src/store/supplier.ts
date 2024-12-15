@@ -19,6 +19,7 @@ export interface Supplier {
   notificationsEnabled?: boolean;
   tenderCount?: number;
   wonTenderCount?: number;
+  userId?: string;
 }
 
 interface SupplierStore {
@@ -37,7 +38,12 @@ export const useSupplierStore = create<SupplierStore>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('database_suppliers')
-        .select('*')
+        .select(`
+          *,
+          users!database_suppliers_user_id_fkey (
+            id
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -63,7 +69,8 @@ export const useSupplierStore = create<SupplierStore>((set, get) => ({
         formUrl: s.form_url,
         notificationsEnabled: s.notifications_enabled,
         tenderCount: s.tender_count,
-        wonTenderCount: s.won_tender_count
+        wonTenderCount: s.won_tender_count,
+        userId: s.user_id
       }));
 
       set({ suppliers });
@@ -151,20 +158,29 @@ export const useSupplierStore = create<SupplierStore>((set, get) => ({
   toggleNotifications: async (id) => {
     try {
       const supplier = get().suppliers.find(s => s.id === id);
-      if (!supplier) return;
+      
+      if (!supplier) {
+        console.error('Supplier not found:', id);
+        return;
+      }
 
-      const { error } = await supabase
-        .from('database_suppliers')
-        .update({
-          notifications_enabled: !supplier.notificationsEnabled
-        })
-        .eq('id', id);
+      // Use raw update function to bypass triggers
+      const { data, error } = await supabase
+        .rpc('toggle_notification_raw', {
+          supplier_id: id
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error toggling notifications:', error);
+        throw error;
+      }
 
+      // Fetch the current state from database to ensure we're in sync
       await get().fetchSuppliers();
+
     } catch (error) {
-      console.error('Error toggling notifications:', error);
+      console.error('Error in toggleNotifications:', error);
+      await get().fetchSuppliers();
       throw error;
     }
   }

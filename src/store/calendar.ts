@@ -1,137 +1,125 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
+import { sendNotification } from '../services/notificationService';
 
-interface CalendarEvent {
+export interface CalendarEvent {
   id: string;
   title: string;
   date: string;
-  protocolId: string;
-  completed?: boolean;
+  status: 'scheduled' | 'unassigned' | 'completed';
+  createdAt: string;
+  protocolId?: string;
 }
 
-interface CalendarStore {
+interface CalendarState {
   events: CalendarEvent[];
   unscheduledEvents: CalendarEvent[];
+  completedEvents: CalendarEvent[];
   fetchEvents: () => Promise<void>;
-  scheduleEvent: (protocolId: string, date: Date, userId?: string) => Promise<void>;
-  updateEventDate: (eventId: string, newDate: Date, userId?: string) => Promise<void>;
-  markEventComplete: (eventId: string, userId?: string) => Promise<void>;
-  undoEventComplete: (eventId: string, userId?: string) => Promise<void>;
+  createEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt'>) => Promise<void>;
+  scheduleEvent: (protocolId: string, date: string) => Promise<void>;
+  updateEventDate: (eventId: string, newDate: string) => Promise<void>;
+  markEventComplete: (eventId: string) => Promise<void>;
+  undoEventComplete: (eventId: string) => Promise<void>;
 }
 
-export const useCalendarStore = create<CalendarStore>((set, get) => ({
+export const useCalendarStore = create<CalendarState>((set, get) => ({
   events: [],
   unscheduledEvents: [],
+  completedEvents: [],
 
   fetchEvents: async () => {
     try {
-      // Fetch scheduled events
-      const { data: scheduledEvents, error: scheduledError } = await supabase
+      const { data, error } = await supabase
         .from('calendar_events')
-        .select(`
-          *,
-          protocol:protocols!calendar_events_protocol_id_fkey(
-            *,
-            tender:tenders!protocols_tender_id_fkey(
-              *,
-              request:requests!tenders_request_id_fkey(
-                *,
-                items:request_items(*)
-              )
-            )
-          )
-        `)
+        .select('*')
         .order('date', { ascending: true });
 
-      if (scheduledError) throw scheduledError;
+      if (error) throw error;
 
-      // Get IDs of scheduled protocols
-      const scheduledProtocolIds = scheduledEvents?.map(e => e.protocol_id) || [];
-
-      // Fetch unscheduled events (paid protocols without calendar events)
-      let unscheduled = [];
-      if (scheduledProtocolIds.length > 0) {
-        const { data, error: unscheduledError } = await supabase
-          .from('protocols')
-          .select(`
-            *,
-            tender:tenders!protocols_tender_id_fkey(
-              *,
-              request:requests!tenders_request_id_fkey(
-                *,
-                items:request_items(*)
-              )
-            )
-          `)
-          .eq('finance_status', 'paid')
-          .not('id', 'in', `(${scheduledProtocolIds.join(',')})`);
-
-        if (unscheduledError) throw unscheduledError;
-        unscheduled = data || [];
-      } else {
-        // If no scheduled events, fetch all paid protocols
-        const { data, error: unscheduledError } = await supabase
-          .from('protocols')
-          .select(`
-            *,
-            tender:tenders!protocols_tender_id_fkey(
-              *,
-              request:requests!tenders_request_id_fkey(
-                *,
-                items:request_items(*)
-              )
-            )
-          `)
-          .eq('finance_status', 'paid');
-
-        if (unscheduledError) throw unscheduledError;
-        unscheduled = data || [];
-      }
-
-      // Map scheduled events
-      const events = (scheduledEvents || [])
-        .filter(event => event.protocol?.tender?.request?.items?.[0])
-        .map(event => ({
-          id: event.id,
-          title: event.protocol.tender.request.items[0].name,
-          date: event.date,
-          protocolId: event.protocol_id,
-          completed: event.completed || false
-        }));
-
-      // Map unscheduled events
-      const unscheduledEvents = unscheduled
-        .filter(protocol => protocol.tender?.request?.items?.[0])
-        .map(protocol => ({
-          id: protocol.id,
-          title: protocol.tender.request.items[0].name,
-          date: '',
-          protocolId: protocol.id
-        }));
-
-      set({ events, unscheduledEvents });
+      // Filter events by status
+      const allEvents = data || [];
+      const unscheduledEvents = allEvents.filter(event => event.status === 'unassigned');
+      const scheduledEvents = allEvents.filter(event => event.status === 'scheduled');
+      const completedEvents = allEvents.filter(event => event.status === 'completed');
+      
+      set({ 
+        events: scheduledEvents,
+        unscheduledEvents,
+        completedEvents
+      });
     } catch (error) {
-      console.error('Error fetching calendar events:', error);
+      console.error('Error fetching events:', error);
       throw error;
     }
   },
 
-  scheduleEvent: async (protocolId: string, date: Date, userId?: string) => {
-    // Check if user is Abdurauf
-    if (userId !== '00000000-0000-0000-0000-000000000001') {
-      throw new Error('Unauthorized: Only Abdurauf can schedule events');
-    }
-
+  createEvent: async (event) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('calendar_events')
         .insert({
-          protocol_id: protocolId,
-          date: date.toISOString(),
-          completed: false
-        });
+          ...event,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // If event is unassigned, notify Abdurauf
+      if (event.status === 'unassigned') {
+        await sendNotification('EVENT_NEEDS_SCHEDULING', {
+          title: event.title
+        });
+      }
+
+      await get().fetchEvents();
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw error;
+    }
+  },
+
+  scheduleEvent: async (protocolId: string, date: string) => {
+    try {
+      // Find the event by protocolId
+      const { data: events, error: fetchError } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .eq('protocolId', protocolId)
+        .eq('status', 'unassigned')
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+      if (!events || events.length === 0) {
+        throw new Error('Event not found');
+      }
+
+      const event = events[0];
+
+      // Update the event
+      const { error: updateError } = await supabase
+        .from('calendar_events')
+        .update({ 
+          date,
+          status: 'scheduled'
+        })
+        .eq('id', event.id);
+
+      if (updateError) throw updateError;
+
+      // Send a single notification to both users
+      await sendNotification('NEW_EVENT_SCHEDULED', {
+        title: event.title,
+        date: format(new Date(date), 'd MMMM yyyy', { locale: ru }),
+        userIds: [
+          '00000000-0000-0000-0000-000000000004', // Akmal
+          '00000000-0000-0000-0000-000000000005'  // Umar
+        ]
+      });
 
       await get().fetchEvents();
     } catch (error) {
@@ -140,19 +128,27 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     }
   },
 
-  updateEventDate: async (eventId: string, newDate: Date, userId?: string) => {
-    // Check if user is Abdurauf
-    if (userId !== '00000000-0000-0000-0000-000000000001') {
-      throw new Error('Unauthorized: Only Abdurauf can update event dates');
-    }
-
+  updateEventDate: async (eventId: string, newDate: string) => {
     try {
+      const event = get().events.find(e => e.id === eventId);
+      if (!event) throw new Error('Event not found');
+
       const { error } = await supabase
         .from('calendar_events')
-        .update({ date: newDate.toISOString() })
+        .update({ date: newDate })
         .eq('id', eventId);
 
       if (error) throw error;
+
+      // Send a single notification to both users about the date change
+      await sendNotification('NEW_EVENT_SCHEDULED', {
+        title: event.title,
+        date: format(new Date(newDate), 'd MMMM yyyy', { locale: ru }),
+        userIds: [
+          '00000000-0000-0000-0000-000000000004', // Akmal
+          '00000000-0000-0000-0000-000000000005'  // Umar
+        ]
+      });
 
       await get().fetchEvents();
     } catch (error) {
@@ -161,37 +157,43 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
     }
   },
 
-  markEventComplete: async (eventId: string, userId?: string) => {
-    // Check if user is Abdurauf
-    if (userId !== '00000000-0000-0000-0000-000000000001') {
-      throw new Error('Unauthorized: Only Abdurauf can mark events as complete');
-    }
-
+  markEventComplete: async (eventId: string) => {
     try {
+      const event = get().events.find(e => e.id === eventId);
+      if (!event) throw new Error('Event not found');
+
       const { error } = await supabase
         .from('calendar_events')
-        .update({ completed: true })
+        .update({ status: 'completed' })
         .eq('id', eventId);
 
       if (error) throw error;
 
+      // Send a single notification to all users
+      await sendNotification('EVENT_COMPLETED', {
+        title: event.title,
+        userIds: [
+          '00000000-0000-0000-0000-000000000001', // Abdurauf (admin)
+          '00000000-0000-0000-0000-000000000004', // Akmal
+          '00000000-0000-0000-0000-000000000005'  // Umar
+        ]
+      });
+
       await get().fetchEvents();
     } catch (error) {
-      console.error('Error marking event as complete:', error);
+      console.error('Error completing event:', error);
       throw error;
     }
   },
 
-  undoEventComplete: async (eventId: string, userId?: string) => {
-    // Check if user is Abdurauf
-    if (userId !== '00000000-0000-0000-0000-000000000001') {
-      throw new Error('Unauthorized: Only Abdurauf can undo event completion');
-    }
-
+  undoEventComplete: async (eventId: string) => {
     try {
+      const event = get().completedEvents.find(e => e.id === eventId);
+      if (!event) throw new Error('Event not found');
+
       const { error } = await supabase
         .from('calendar_events')
-        .update({ completed: false })
+        .update({ status: 'scheduled' })
         .eq('id', eventId);
 
       if (error) throw error;

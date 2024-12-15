@@ -1,8 +1,11 @@
-import { useParams } from 'react-router-dom';
-import ProtocolDetailsComponent from '../components/protocols/ProtocolDetails';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import CashRequestDetailsComponent from '../components/requests/CashRequestDetails';
 import { styles } from '../utils/styleConstants';
 
 export default function CashRequestDetails() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { from, view } = location.state || {};
   const { id } = useParams();
 
   if (!id) {
@@ -11,7 +14,9 @@ export default function CashRequestDetails() {
 
   return (
     <div className={`${styles.padding.section}`}>
-      <ProtocolDetailsComponent protocolId={id} onBack={() => window.history.back()} />
+      <CashRequestDetailsComponent 
+        backState={{ from, view }}
+      />
     </div>
   );
 } 

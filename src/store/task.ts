@@ -1,13 +1,15 @@
 import { create } from 'zustand';
-import { Task } from '../types';
 import { supabase } from '../lib/supabase';
+import { Task } from '../types';
+import { sendNotification } from '../services/notificationService';
 
 interface TaskState {
   tasks: Task[];
   fetchTasks: () => Promise<void>;
-  addTask: (task: Omit<Task, 'id' | 'createdAt'> & { document?: File }) => Promise<void>;
-  updateTask: (id: string, updates: Partial<Task> & { document?: File }) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
+  createTask: (task: Omit<Task, 'id' | 'createdAt' | 'completedAt'>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  completeTask: (taskId: string) => Promise<void>;
+  reopenTask: (taskId: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -15,146 +17,114 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   fetchTasks: async () => {
     try {
-      const { data: tasks, error } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const mappedTasks = (tasks || []).map(task => ({
+      // Transform snake_case to camelCase
+      const transformedTasks = (data || []).map(task => ({
         id: task.id,
         name: task.name,
         description: task.description,
         documentUrl: task.document_url,
+        createdBy: task.created_by,
         createdAt: task.created_at,
-        createdBy: task.created_by
+        completedAt: task.completed_at
       }));
 
-      set({ tasks: mappedTasks });
+      set({ tasks: transformedTasks });
     } catch (error) {
       console.error('Error fetching tasks:', error);
       throw error;
     }
   },
 
-  addTask: async (task) => {
+  createTask: async (task) => {
     try {
-      let documentUrl = undefined;
-
-      if (task.document) {
-        const fileExt = task.document.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `tasks/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, task.document);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('documents')
-          .getPublicUrl(filePath);
-
-        documentUrl = publicUrl;
-      }
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .insert({
           name: task.name,
           description: task.description,
-          document_url: documentUrl,
-          created_by: task.createdBy
-        });
-
-      if (error) throw error;
-
-      await get().fetchTasks();
-    } catch (error) {
-      console.error('Error adding task:', error);
-      throw error;
-    }
-  },
-
-  updateTask: async (id, updates) => {
-    try {
-      let documentUrl = updates.documentUrl;
-
-      if (updates.document) {
-        // Delete old file if exists
-        if (documentUrl) {
-          const oldPath = documentUrl.split('/').pop();
-          if (oldPath) {
-            await supabase.storage
-              .from('documents')
-              .remove([`tasks/${oldPath}`]);
-          }
-        }
-
-        // Upload new file
-        const fileExt = updates.document.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `tasks/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, updates.document);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('documents')
-          .getPublicUrl(filePath);
-
-        documentUrl = publicUrl;
-      }
-
-      const { error } = await supabase
-        .from('tasks')
-        .update({
-          name: updates.name,
-          description: updates.description,
-          document_url: documentUrl
+          document_url: task.documentUrl,
+          created_by: task.createdBy,
+          created_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Notify Abdurauf about new task
+      await sendNotification('NEW_TASK', {
+        name: task.name
+      });
+
       await get().fetchTasks();
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error creating task:', error);
       throw error;
     }
   },
 
-  deleteTask: async (id) => {
+  deleteTask: async (taskId: string) => {
     try {
-      // Get task to check if it has a document
-      const task = get().tasks.find(t => t.id === id);
-      
-      if (task?.documentUrl) {
-        const fileName = task.documentUrl.split('/').pop();
-        if (fileName) {
-          await supabase.storage
-            .from('documents')
-            .remove([`tasks/${fileName}`]);
-        }
-      }
-
       const { error } = await supabase
         .from('tasks')
         .delete()
-        .eq('id', id);
+        .eq('id', taskId);
 
       if (error) throw error;
 
-      set(state => ({
-        tasks: state.tasks.filter(t => t.id !== id)
-      }));
+      // Also delete the document from storage if it exists
+      const task = get().tasks.find(t => t.id === taskId);
+      if (task?.documentUrl) {
+        const filePath = task.documentUrl.split('/').pop();
+        if (filePath) {
+          await supabase.storage
+            .from('documents')
+            .remove([`tasks/${filePath}`]);
+        }
+      }
+
+      await get().fetchTasks();
     } catch (error) {
       console.error('Error deleting task:', error);
+      throw error;
+    }
+  },
+
+  completeTask: async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await get().fetchTasks();
+    } catch (error) {
+      console.error('Error completing task:', error);
+      throw error;
+    }
+  },
+
+  reopenTask: async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed_at: null })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await get().fetchTasks();
+    } catch (error) {
+      console.error('Error reopening task:', error);
       throw error;
     }
   }
