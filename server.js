@@ -178,7 +178,7 @@ async function handleApexBotCommand(update) {
 
   // Handle /start command
   if (message.text === '/start') {
-    await sendTelegramMessage(chatId, 'Для продолжения регистрации, пожалуйста, поделитесь своим контактом.', APEX_TELEGRAM_API, {
+    await sendTelegramMessage(chatId, 'Добро пожаловать в систему ApexFlow!\n\nДля завершения регистрации нажмите кнопку «Поделиться контактом» ниже.', APEX_TELEGRAM_API, {
       reply_markup: {
         keyboard: [[{ text: 'Поделиться контактом', request_contact: true }]],
         resize_keyboard: true
@@ -230,9 +230,6 @@ async function handleApexBotCommand(update) {
     }
     return;
   }
-
-  // Default response for unknown commands
-  await sendTelegramMessage(chatId, 'Извините, я не понимаю эту команду.', APEX_TELEGRAM_API);
 }
 
 async function startSupportBotPolling() {
