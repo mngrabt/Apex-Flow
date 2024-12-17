@@ -27,6 +27,10 @@ const APEX_TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 const ADMIN_CHAT_ID = '2041833916'; // Admin's chat ID
 
+// Constants for error handling and recovery
+const RECOVERY_DELAY = 5000; // 5 seconds delay for recovery
+const MAX_CONSECUTIVE_ERRORS = 5;
+
 // Separate polling states for each bot
 let isSupportBotPolling = false;
 let isApexBotPolling = false;
@@ -168,6 +172,7 @@ async function startSupportBotPolling() {
   
   isSupportBotPolling = true;
   console.log('[SUPPORT BOT] Starting polling...');
+  let consecutiveErrors = 0;
 
   try {
     const deleteWebhookResult = await makeRequest(`${SUPPORT_TELEGRAM_API}/deleteWebhook`);
@@ -181,6 +186,7 @@ async function startSupportBotPolling() {
       const data = await makeRequest(`${SUPPORT_TELEGRAM_API}/getUpdates?offset=${supportBotOffset}&timeout=30`);
 
       if (data.ok) {
+        consecutiveErrors = 0; // Reset error counter on success
         const updates = data.result;
         if (updates.length > 0) {
           console.log(`[SUPPORT BOT] Received ${updates.length} updates`);
@@ -202,9 +208,24 @@ async function startSupportBotPolling() {
           await makeRequest(`${SUPPORT_TELEGRAM_API}/deleteWebhook`);
           await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
         }
+        
+        consecutiveErrors++;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+          isSupportBotPolling = false;
+          setTimeout(() => startSupportBotPolling(), RECOVERY_DELAY);
+          break;
+        }
       }
     } catch (error) {
       console.error('[SUPPORT BOT] Polling error:', error);
+      consecutiveErrors++;
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+        isSupportBotPolling = false;
+        setTimeout(() => startSupportBotPolling(), RECOVERY_DELAY);
+        break;
+      }
       await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
     }
   }
@@ -218,6 +239,7 @@ async function startApexBotPolling() {
   
   isApexBotPolling = true;
   console.log('[APEX BOT] Starting polling...');
+  let consecutiveErrors = 0;
 
   try {
     const deleteWebhookResult = await makeRequest(`${APEX_TELEGRAM_API}/deleteWebhook`);
@@ -231,6 +253,7 @@ async function startApexBotPolling() {
       const data = await makeRequest(`${APEX_TELEGRAM_API}/getUpdates?offset=${apexBotOffset}&timeout=30`);
 
       if (data.ok) {
+        consecutiveErrors = 0; // Reset error counter on success
         const updates = data.result;
         if (updates.length > 0) {
           console.log(`[APEX BOT] Received ${updates.length} updates`);
@@ -252,9 +275,24 @@ async function startApexBotPolling() {
           await makeRequest(`${APEX_TELEGRAM_API}/deleteWebhook`);
           await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
         }
+        
+        consecutiveErrors++;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.error(`[APEX BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+          isApexBotPolling = false;
+          setTimeout(() => startApexBotPolling(), RECOVERY_DELAY);
+          break;
+        }
       }
     } catch (error) {
       console.error('[APEX BOT] Polling error:', error);
+      consecutiveErrors++;
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        console.error(`[APEX BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+        isApexBotPolling = false;
+        setTimeout(() => startApexBotPolling(), RECOVERY_DELAY);
+        break;
+      }
       await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
     }
   }
