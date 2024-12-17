@@ -18,10 +18,20 @@ const port = process.env.SUPPORT_BOT_PORT || 3002;
 app.use(express.json());
 app.use(cors());
 
-// Environment variables
-const BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || '7576461454:AAEtP7m6G024u2IrR82_fAC3M3QDGXnUC8c';
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+// Environment variables for both bots
+const SUPPORT_BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || '7576461454:AAEtP7m6G024u2IrR82_fAC3M3QDGXnUC8c';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7832369613:AAFr_slHVkZ-Dx8Th_IX0GehbnFutE_CHmk';
+
+const SUPPORT_TELEGRAM_API = `https://api.telegram.org/bot${SUPPORT_BOT_TOKEN}`;
+const APEX_TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+
 const ADMIN_CHAT_ID = '2041833916'; // Admin's chat ID
+
+// Separate polling states for each bot
+let isSupportBotPolling = false;
+let isApexBotPolling = false;
+let supportBotOffset = 0;
+let apexBotOffset = 0;
 
 // Create Supabase client
 const supabase = createClient(
@@ -29,8 +39,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-let isPolling = false;
-let offset = 0;
 let server = null;
 
 const WELCOME_MESSAGE = `Рады приветствовать вас в ApexFlow!
@@ -74,7 +82,7 @@ function makeRequest(url, options = {}) {
 async function sendTelegramMessage(chatId, text, options = {}) {
   console.log('[SUPPORT BOT] Sending message to chat ID:', chatId, 'Text:', text);
   try {
-    const data = await makeRequest(`${TELEGRAM_API}/sendMessage`, {
+    const data = await makeRequest(`${SUPPORT_TELEGRAM_API}/sendMessage`, {
       method: 'POST',
       body: JSON.stringify({
         chat_id: chatId,
@@ -152,34 +160,27 @@ async function handleBotCommand(update) {
   }
 }
 
-async function startPolling() {
-  if (isPolling) {
+async function startSupportBotPolling() {
+  if (isSupportBotPolling) {
     console.log('[SUPPORT BOT] Already polling');
     return;
   }
   
-  isPolling = true;
+  isSupportBotPolling = true;
   console.log('[SUPPORT BOT] Starting polling...');
 
-  // First, try to delete webhook to ensure we're the only instance
   try {
-    const deleteWebhookResult = await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
+    const deleteWebhookResult = await makeRequest(`${SUPPORT_TELEGRAM_API}/deleteWebhook`);
     console.log('[SUPPORT BOT] Deleted webhook:', deleteWebhookResult);
   } catch (error) {
     console.error('[SUPPORT BOT] Error deleting webhook:', error);
   }
 
-  let consecutiveErrors = 0;
-  const MAX_CONSECUTIVE_ERRORS = 5;
-  const RECOVERY_DELAY = 5000; // 5 seconds
-
-  while (isPolling) {
+  while (isSupportBotPolling) {
     try {
-      console.log('[SUPPORT BOT] Polling for updates, offset:', offset);
-      const data = await makeRequest(`${TELEGRAM_API}/getUpdates?offset=${offset}&timeout=30`);
+      const data = await makeRequest(`${SUPPORT_TELEGRAM_API}/getUpdates?offset=${supportBotOffset}&timeout=30`);
 
       if (data.ok) {
-        consecutiveErrors = 0; // Reset error counter on success
         const updates = data.result;
         if (updates.length > 0) {
           console.log(`[SUPPORT BOT] Received ${updates.length} updates`);
@@ -190,7 +191,7 @@ async function startPolling() {
             } catch (error) {
               console.error('[SUPPORT BOT] Error handling update:', error);
             }
-            offset = update.update_id + 1;
+            supportBotOffset = update.update_id + 1;
           }
         }
       } else {
@@ -198,42 +199,76 @@ async function startPolling() {
         
         if (data.error_code === 409) {
           console.log('[SUPPORT BOT] Conflict detected, attempting to recover...');
-          await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
+          await makeRequest(`${SUPPORT_TELEGRAM_API}/deleteWebhook`);
           await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
-        }
-        
-        consecutiveErrors++;
-        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
-          isPolling = false;
-          setTimeout(() => {
-            isPolling = false;
-            startPolling();
-          }, RECOVERY_DELAY);
-          break;
         }
       }
     } catch (error) {
       console.error('[SUPPORT BOT] Polling error:', error);
-      consecutiveErrors++;
-      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-        console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
-        isPolling = false;
-        setTimeout(() => {
-          isPolling = false;
-          startPolling();
-        }, RECOVERY_DELAY);
-        break;
-      }
       await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
     }
   }
 }
 
+async function startApexBotPolling() {
+  if (isApexBotPolling) {
+    console.log('[APEX BOT] Already polling');
+    return;
+  }
+  
+  isApexBotPolling = true;
+  console.log('[APEX BOT] Starting polling...');
+
+  try {
+    const deleteWebhookResult = await makeRequest(`${APEX_TELEGRAM_API}/deleteWebhook`);
+    console.log('[APEX BOT] Deleted webhook:', deleteWebhookResult);
+  } catch (error) {
+    console.error('[APEX BOT] Error deleting webhook:', error);
+  }
+
+  while (isApexBotPolling) {
+    try {
+      const data = await makeRequest(`${APEX_TELEGRAM_API}/getUpdates?offset=${apexBotOffset}&timeout=30`);
+
+      if (data.ok) {
+        const updates = data.result;
+        if (updates.length > 0) {
+          console.log(`[APEX BOT] Received ${updates.length} updates`);
+
+          for (const update of updates) {
+            try {
+              await handleBotCommand(update);
+            } catch (error) {
+              console.error('[APEX BOT] Error handling update:', error);
+            }
+            apexBotOffset = update.update_id + 1;
+          }
+        }
+      } else {
+        console.error('[APEX BOT] GetUpdates error:', data);
+        
+        if (data.error_code === 409) {
+          console.log('[APEX BOT] Conflict detected, attempting to recover...');
+          await makeRequest(`${APEX_TELEGRAM_API}/deleteWebhook`);
+          await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
+        }
+      }
+    } catch (error) {
+      console.error('[APEX BOT] Polling error:', error);
+      await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
+    }
+  }
+}
+
+// Start both bots
+startSupportBotPolling();
+startApexBotPolling();
+
 // Graceful shutdown
 async function shutdown() {
   console.log('[SUPPORT BOT] Shutting down...');
-  isPolling = false;
+  isSupportBotPolling = false;
+  isApexBotPolling = false;
   
   if (server) {
     await new Promise((resolve) => {
@@ -252,7 +287,8 @@ process.on('SIGINT', shutdown);
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    isPolling,
+    isSupportBotPolling,
+    isApexBotPolling,
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     timestamp: new Date().toISOString()
@@ -262,8 +298,4 @@ app.get('/health', (req, res) => {
 // Start the server and bot
 server = app.listen(port, () => {
   console.log(`Support bot server running on port ${port}`);
-  startPolling().catch(error => {
-    console.error('[SUPPORT BOT] Failed to start polling:', error);
-    process.exit(1);
-  });
 }); 
