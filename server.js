@@ -178,9 +178,9 @@ async function handleApexBotCommand(update) {
 
   // Handle /start command
   if (message.text === '/start') {
-    await sendTelegramMessage(chatId, 'Welcome to ApexFlow! Please share your contact to continue.', APEX_TELEGRAM_API, {
+    await sendTelegramMessage(chatId, 'Для продолжения регистрации, пожалуйста, поделитесь своим контактом.', APEX_TELEGRAM_API, {
       reply_markup: {
-        keyboard: [[{ text: 'Share Contact', request_contact: true }]],
+        keyboard: [[{ text: 'Поделиться контактом', request_contact: true }]],
         resize_keyboard: true
       }
     });
@@ -193,35 +193,36 @@ async function handleApexBotCommand(update) {
     console.log('[APEX BOT] Received contact:', phoneNumber);
     
     try {
-      // Clean the phone number
+      // Clean and format the phone number
       const cleanNumber = phoneNumber.replace(/\D/g, '');
+      const formattedNumber = cleanNumber.startsWith('998') ? cleanNumber : `998${cleanNumber}`;
       
       // Delete any existing verifications for this number or chat ID
       await supabase
         .from('telegram_verifications')
         .delete()
-        .or(`chat_id.eq.${chatId},phone_number.eq.${cleanNumber}`);
+        .or(`chat_id.eq.${chatId},phone_number.eq.${formattedNumber}`);
 
       // Store the new verification
       const { error: insertError } = await supabase
         .from('telegram_verifications')
         .insert({
           chat_id: chatId,
-          phone_number: cleanNumber,
+          phone_number: formattedNumber,
           verified_at: new Date().toISOString()
         });
 
       if (insertError) throw insertError;
 
       // Remove keyboard and confirm
-      await sendTelegramMessage(chatId, 'Thank you! Your contact has been verified. You can now continue with registration.', APEX_TELEGRAM_API, {
+      await sendTelegramMessage(chatId, 'Контактные данные получены. Вернитесь в приложение для продолжения процесса регистрации.', APEX_TELEGRAM_API, {
         reply_markup: {
           remove_keyboard: true
         }
       });
     } catch (error) {
       console.error('[APEX BOT] Error storing verification:', error);
-      await sendTelegramMessage(chatId, 'Sorry, there was an error verifying your contact. Please try again later.', APEX_TELEGRAM_API, {
+      await sendTelegramMessage(chatId, 'Не удалось выполнить верификацию. Повторите попытку.', APEX_TELEGRAM_API, {
         reply_markup: {
           remove_keyboard: true
         }
@@ -231,7 +232,7 @@ async function handleApexBotCommand(update) {
   }
 
   // Default response for unknown commands
-  await sendTelegramMessage(chatId, 'Sorry, I don\'t understand that command.', APEX_TELEGRAM_API);
+  await sendTelegramMessage(chatId, 'Извините, я не понимаю эту команду.', APEX_TELEGRAM_API);
 }
 
 async function startSupportBotPolling() {
