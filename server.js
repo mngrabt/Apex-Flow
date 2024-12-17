@@ -178,13 +178,60 @@ async function handleApexBotCommand(update) {
 
   // Handle /start command
   if (message.text === '/start') {
-    console.log('[APEX BOT] Handling /start command');
-    await sendTelegramMessage(chatId, 'Добро пожаловать в ApexFlow! Я помогу вам управлять тендерами и заявками.', APEX_TELEGRAM_API);
+    await sendTelegramMessage(chatId, 'Welcome to ApexFlow! Please share your contact to continue.', APEX_TELEGRAM_API, {
+      reply_markup: {
+        keyboard: [[{ text: 'Share Contact', request_contact: true }]],
+        resize_keyboard: true
+      }
+    });
     return;
   }
 
-  // Add more ApexBot specific commands here
-  // For example: /help, /status, /tender, etc.
+  // Handle contact sharing
+  if (message.contact) {
+    const phoneNumber = message.contact.phone_number;
+    console.log('[APEX BOT] Received contact:', phoneNumber);
+    
+    try {
+      // Clean the phone number
+      const cleanNumber = phoneNumber.replace(/\D/g, '');
+      
+      // Delete any existing verifications for this number or chat ID
+      await supabase
+        .from('telegram_verifications')
+        .delete()
+        .or(`chat_id.eq.${chatId},phone_number.eq.${cleanNumber}`);
+
+      // Store the new verification
+      const { error: insertError } = await supabase
+        .from('telegram_verifications')
+        .insert({
+          chat_id: chatId,
+          phone_number: cleanNumber,
+          verified_at: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
+
+      // Remove keyboard and confirm
+      await sendTelegramMessage(chatId, 'Thank you! Your contact has been verified. You can now continue with registration.', APEX_TELEGRAM_API, {
+        reply_markup: {
+          remove_keyboard: true
+        }
+      });
+    } catch (error) {
+      console.error('[APEX BOT] Error storing verification:', error);
+      await sendTelegramMessage(chatId, 'Sorry, there was an error verifying your contact. Please try again later.', APEX_TELEGRAM_API, {
+        reply_markup: {
+          remove_keyboard: true
+        }
+      });
+    }
+    return;
+  }
+
+  // Default response for unknown commands
+  await sendTelegramMessage(chatId, 'Sorry, I don\'t understand that command.', APEX_TELEGRAM_API);
 }
 
 async function startSupportBotPolling() {
