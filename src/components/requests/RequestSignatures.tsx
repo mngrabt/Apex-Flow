@@ -69,7 +69,7 @@ export default function RequestSignatures({
           disabled={isSigningId === request.id}
           className="mt-6 w-full px-4 py-3 bg-[#ff6b00] text-white rounded-lg transition-colors hover:bg-[#ff6b00]/90 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
         >
-          {isSigningId === request.id ? 'Подписание...' : 'Подписать заявку'}
+          {isSigningId === request.id ? 'Подписание...' : 'Подписать документ'}
         </button>
       )}
     </div>

@@ -28,7 +28,18 @@ export default function FinanceHeader({
               Финансы
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {protocols.length} {protocols.length === 1 ? 'протокол' : 'протоколов'}
+              {protocols.length}{' '}
+              {(() => {
+                const count = protocols.length;
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
+
+                if (count === 0) return 'протоколов';
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'протоколов';
+                if (lastDigit === 1) return 'протокол';
+                if (lastDigit >= 2 && lastDigit <= 4) return 'протокола';
+                return 'протоколов';
+              })()}
             </p>
           </div>
         </div>
@@ -47,7 +58,7 @@ export default function FinanceHeader({
                     : 'text-gray-500 hover:text-gray-600 hover:bg-white/50'
                   }`}
               >
-                <span className="relative">Не поданы</span>
+                <span className="relative">На рассмотрение</span>
               </button>
             )}
             
@@ -60,7 +71,7 @@ export default function FinanceHeader({
                     : 'text-gray-500 hover:text-gray-600 hover:bg-white/50'
                   }`}
               >
-                <span className="relative">В ожидании</span>
+                <span className="relative">На оплате</span>
               </button>
             )}
             

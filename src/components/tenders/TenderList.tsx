@@ -117,13 +117,18 @@ export default function TenderList({ tenders }: TenderListProps) {
                   <div className="text-sm font-medium text-gray-900">
                     {tender.suppliers?.length || 0}/10
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Поставщиков</div>
+                  <div className="text-xs text-gray-500 mt-1">Участников тендера</div>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4 text-center">
-                  <div className={`text-sm font-medium ${daysLeft === 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                    {daysLeft} {daysLeft === 1 ? 'день' : daysLeft >= 2 && daysLeft <= 4 ? 'дня' : 'дней'}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Осталось</div>
+                <div className={`text-sm font-medium ${daysLeft === 0 ? 'text-red-500' : 'text-gray-900'}`}>
+                  {daysLeft}{' '}
+                  {(() => {
+                    if (daysLeft === 1) return 'день';
+                    if (daysLeft >= 2 && daysLeft <= 4) return 'дня';
+                    return 'дней';
+                  })()}
+                </div>
+                  <div className="text-xs text-gray-500 mt-1">До завершения</div>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4 text-center">
                   <div className="text-sm font-medium text-gray-900">

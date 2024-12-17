@@ -7,7 +7,7 @@ import { persist } from 'zustand/middleware';
 const USER_MAPPINGS: Record<string, { fullName: string; role: string }> = {
   '00000000-0000-0000-0000-000000000001': {
     fullName: 'Абдурауф Гани',
-    role: 'Продакшн Менеджер'
+    role: 'Продакшен Менеджер'
   },
   '00000000-0000-0000-0000-000000000003': {
     fullName: 'Фозил Бабаджанов',

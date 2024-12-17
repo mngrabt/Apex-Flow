@@ -156,8 +156,19 @@ export default function Dashboard() {
                       <div className="mt-1 text-2xl font-semibold">{requestsRate}%</div>
                       {pendingRequests.length > 0 && (
                         <div className="mt-1 text-xs font-medium text-primary">
-                          {pendingRequests.length} ожидает подпись
-                        </div>
+                          {pendingRequests.length}{' '}
+                          {(() => {
+                            const count = pendingRequests.length;
+                            const lastDigit = count % 10;
+                            const lastTwoDigits = count % 100;
+                        
+                            if (count === 0) return 'ожидают подпись';
+                            if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'ожидают подпись';
+                            if (lastDigit === 1) return 'ожидает подпись';
+                            if (lastDigit >= 2 && lastDigit <= 4) return 'ожидают подпись';
+                            return 'ожидают подпись';
+                          })()}
+                       </div>
                       )}
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -296,8 +307,19 @@ export default function Dashboard() {
                           <div className="mt-1 text-2xl font-semibold">{protocolsRate}%</div>
                           {pendingProtocols.length > 0 && (
                             <div className="mt-1 text-xs font-medium text-primary">
-                              {pendingProtocols.length} ожидает подпись
-                            </div>
+                              {pendingProtocols.length}{' '}
+                              {(() => {
+                                const count = pendingProtocols.length;
+                                const lastDigit = count % 10;
+                                const lastTwoDigits = count % 100;
+                            
+                                if (count === 0) return 'ожидают подпись';
+                                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'ожидают подпись';
+                                if (lastDigit === 1) return 'ожидает подпись';
+                                if (lastDigit >= 2 && lastDigit <= 4) return 'ожидают подпись';
+                                return 'ожидают подпись';
+                              })()}
+                           </div>
                           )}
                         </div>
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -338,8 +360,19 @@ export default function Dashboard() {
                       <div className="mt-1 text-2xl font-semibold">{tasksRate}%</div>
                       {pendingTasks.length > 0 && (
                         <div className="mt-1 text-xs font-medium text-primary">
-                          {pendingTasks.length} активных
-                        </div>
+                          {pendingTasks.length}{' '}
+                          {(() => {
+                            const count = pendingTasks.length;
+                            const lastDigit = count % 10;
+                            const lastTwoDigits = count % 100;
+                        
+                            if (count === 0) return 'активных';
+                            if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'активных';
+                            if (lastDigit === 1) return 'активная';
+                            if (lastDigit >= 2 && lastDigit <= 4) return 'активные';
+                            return 'активных';
+                          })()}
+                       </div>
                       )}
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -531,7 +564,7 @@ export default function Dashboard() {
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-gray-900">Задержки оплат</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Платежи на контроле</h2>
                     <div className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                       {delayedProtocols.length}
                     </div>
@@ -581,7 +614,7 @@ export default function Dashboard() {
                   })}
                   {delayedProtocols.length === 0 && (
                     <div className="text-center py-8 text-sm text-gray-500">
-                      Нет задержек по оплате
+                      Все платежи выполняются в срок
                     </div>
                   )}
                 </div>
@@ -624,7 +657,7 @@ export default function Dashboard() {
                   ))}
                   {pendingTasks.length === 0 && (
                     <div className="text-center py-8 text-sm text-gray-500">
-                      Нет текущих задач
+                      Активных задач не обнаружено
                     </div>
                   )}
                 </div>
@@ -671,7 +704,7 @@ export default function Dashboard() {
                 ))}
                 {(!applications || applications.filter(app => app.status === 'pending').length === 0) && (
                   <div className="text-center py-8 text-sm text-gray-500">
-                    Нет новых заявок
+                    Новых заявок не поступало
                   </div>
                 )}
               </div>
@@ -682,13 +715,13 @@ export default function Dashboard() {
           {!isAziz && !isFozil && !isUmarali && !isUmar && !isAkmal && (
             <div className="lg:hidden bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">База подрядчиков</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Реестр подрядчиков</h2>
                 <button
                   onClick={() => navigate('/database')}
                   className="text-xs font-medium text-primary hover:text-primary/80 
                            transition-colors flex items-center gap-1"
                 >
-                  Открыть базу
+                  Открыть реестр
                   <ArrowUpRight className="w-3 h-3" />
                 </button>
               </div>
@@ -715,7 +748,7 @@ export default function Dashboard() {
                 ))}
                 {(!suppliers || suppliers.length === 0) && (
                   <div className="text-center py-8 text-sm text-gray-500">
-                    База пуста
+                    Реестр ожидает наполнения
                   </div>
                 )}
               </div>
@@ -875,7 +908,7 @@ export default function Dashboard() {
                   ))}
                   {(!applications || applications.filter(app => app.status === 'pending').length === 0) && (
                     <div className="text-center py-8 text-sm text-gray-500">
-                      Нет новых заявок
+                      Новых заявлений не поступало
                     </div>
                   )}
                 </div>
@@ -886,7 +919,7 @@ export default function Dashboard() {
             {!isAziz && !isFozil && !isUmarali && !isUmar && !isAkmal && (
               <div className="hidden lg:block bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">База подрядчиков</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Реестр подрядчиков</h2>
                   <button
                     onClick={() => navigate('/database')}
                     className="text-xs font-medium text-primary hover:text-primary/80 
@@ -919,7 +952,7 @@ export default function Dashboard() {
                   ))}
                   {(!suppliers || suppliers.length === 0) && (
                     <div className="text-center py-8 text-sm text-gray-500">
-                      База пуста
+                      Реестр ожидает наполнения
                     </div>
                   )}
                 </div>

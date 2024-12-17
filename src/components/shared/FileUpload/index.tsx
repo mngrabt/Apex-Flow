@@ -35,7 +35,7 @@ export default function FileUpload({
         `}
       >
         <Upload className="w-4 h-4" />
-        {isUploading ? 'Загрузка...' : 'Загрузить КП'}
+        {isUploading ? 'Загрузка...' : 'Загрузить предложение'}
       </label>
     </div>
   );

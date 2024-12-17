@@ -27,7 +27,18 @@ export default function Database() {
             База поставщиков
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {suppliers.length} {suppliers.length === 1 ? 'поставщик' : 'поставщиков'}
+            {suppliers.length}{' '}
+            {(() => {
+              const count = suppliers.length;
+              const lastDigit = count % 10;
+              const lastTwoDigits = count % 100;
+
+              if (count === 0) return 'поставщиков';
+              if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'поставщиков';
+              if (lastDigit === 1) return 'поставщик';
+              if (lastDigit >= 2 && lastDigit <= 4) return 'поставщика';
+              return 'поставщиков';
+            })()}
           </p>
         </div>
       </div>

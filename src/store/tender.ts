@@ -214,7 +214,7 @@ export const useTenderStore = create<TenderState>((set, get) => ({
       if (updates.contactPerson !== undefined) {
         updateData.contact_person = updates.contactPerson;
         if (updates.contactPerson !== currentSupplier.contactPerson) {
-          changes.push(`контактное лицо: ${currentSupplier.contactPerson} ➜ ${updates.contactPerson}`);
+          changes.push(`Представитель: ${currentSupplier.contactPerson} ➜ ${updates.contactPerson}`);
         }
       }
       if (updates.contactNumber !== undefined) {
@@ -458,6 +458,12 @@ export const useTenderStore = create<TenderState>((set, get) => ({
 
       if (error) throw error;
 
+      if (!tender) {
+        throw new Error('No tender data returned after creation');
+      }
+
+      console.log('Created tender:', tender);  // Log the full tender object
+
       // Get request data for notification
       const { data: request } = await supabase
         .from('requests')
@@ -467,11 +473,14 @@ export const useTenderStore = create<TenderState>((set, get) => ({
 
       // Send notification to relevant suppliers
       if (request?.items?.[0]) {
-        // Send notification to suppliers and Fozil (handled in notificationService)
-        await sendNotification('NEW_TENDER', {
+        const notificationData = {
           name: request.items[0].name,
-          categories: request.items[0].categories
-        });
+          categories: request.items[0].categories,
+          tenderId: tender.id.toString()  // Ensure it's a string
+        };
+        console.log('Sending tender notification with data:', notificationData);
+        console.log('Tender ID type:', typeof tender.id, 'Value:', tender.id);
+        await sendNotification('NEW_TENDER', notificationData);
       }
 
       await get().fetchTenders();

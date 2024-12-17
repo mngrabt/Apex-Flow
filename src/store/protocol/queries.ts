@@ -40,6 +40,31 @@ export async function createProtocolFromTender(tenderId: string) {
 
     console.log('Added Abdurauf signature to protocol:', protocol.id);
 
+    // Send notification about protocol needing signature
+    const { data: protocolDetails } = await supabase
+      .from('protocols')
+      .select(`
+        *,
+        tender:tenders(
+          request:requests(
+            items:request_items(*),
+            department
+          )
+        )
+      `)
+      .eq('id', protocol.id)
+      .single();
+
+    if (protocolDetails) {
+      await sendNotification('PROTOCOL_NEEDS_SIGNATURE', {
+        name: protocolDetails.tender?.request?.items?.[0]?.name || `Протокол #${protocol.id}`,
+        protocolId: protocol.id,
+        type: 'tender',
+        department: protocolDetails.tender?.request?.department,
+        tenderId: protocolDetails.tender_id
+      });
+    }
+
     return protocol;
   } catch (error) {
     console.error('Error in createProtocolFromTender:', error);

@@ -77,7 +77,18 @@ export default function Tenders() {
               Тендеры
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {activeTenders.length} {activeTenders.length === 1 ? 'активный тендер' : 'активных тендеров'}
+              {activeTenders.length}{' '}
+              {(() => {
+                const count = activeTenders.length;
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
+
+                if (count === 0) return 'тендеров';
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'тендеров';
+                if (lastDigit === 1) return 'тендер';
+                if (lastDigit >= 2 && lastDigit <= 4) return 'тендера';
+                return 'тендеров';
+              })()}
             </p>
           </div>
         </div>

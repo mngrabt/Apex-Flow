@@ -24,7 +24,7 @@ export default function TelegramStep({ formData, onChange, onNext }: TelegramSte
       setError(null);
 
       const phoneNumber = formData.isTelegramSame ? formData.contactNumber : formData.telegramNumber;
-      const chatId = await verifyTelegramChatId(`998${phoneNumber}`);
+      const chatId = await verifyTelegramChatId(phoneNumber);
 
       if (chatId) {
         onChange({ telegramChatId: chatId });

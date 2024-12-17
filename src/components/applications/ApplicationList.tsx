@@ -66,13 +66,13 @@ export default function ApplicationList({ applications, searchQuery }: Applicati
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 max-[1249px]:grid-cols-1 gap-4">
               {/* Contact Person */}
               <div className="bg-gray-50 rounded-2xl p-4 text-center group-hover:bg-gray-100 transition-colors">
                 <div className="text-sm font-medium text-gray-900">
                   {application.contactPerson}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">Контактное лицо</div>
+                <div className="text-xs text-gray-500 mt-1">Представитель</div>
               </div>
 
               {/* Date */}

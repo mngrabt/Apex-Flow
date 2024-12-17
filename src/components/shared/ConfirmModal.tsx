@@ -16,7 +16,7 @@ interface ConfirmModalProps {
 export default function ConfirmModal({
   title,
   message,
-  confirmText = 'Подтвердить',
+  confirmText = 'Утвердить выбор',
   cancelText = 'Отмена',
   onConfirm,
   onClose,

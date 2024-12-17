@@ -112,7 +112,7 @@ export default function AddSupplierModal({ onClose }: AddSupplierModalProps) {
         />
 
         <Input
-          label="Контактное лицо"
+          label="Представитель"
           value={formData.contactPerson}
           onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
           required

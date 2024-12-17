@@ -53,7 +53,7 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-3 max-[1249px]:grid-cols-1 gap-6 items-start">
       {tasks.map((task) => (
         <div 
           key={task.id}
@@ -84,12 +84,12 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
             </div>
 
             {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 max-[1249px]:grid-cols-1 gap-4">
               <div className="bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[5rem]">
                 <div className="text-sm font-medium text-gray-900 mb-1">
                   {format(new Date(task.createdAt), 'dd.MM.yy')}
                 </div>
-                <div className="text-xs text-gray-500">Дата создания</div>
+                <div className="text-xs text-gray-500">Создана</div>
               </div>
               {task.documentUrl ? (
                 <button
@@ -104,7 +104,9 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
                 </button>
               ) : (
                 <div className="bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[5rem]">
-                  <div className="text-sm font-medium text-gray-900 mb-1">Отсутствует</div>
+                  <div className="text-sm font-medium text-gray-900 mb-1">
+                    ТЗ отсутствует
+                  </div>
                   <div className="text-xs text-gray-500">Документация</div>
                 </div>
               )}

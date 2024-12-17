@@ -71,7 +71,7 @@ export const useSupplierApplicationStore = create<SupplierApplicationState>((set
         .single();
 
       if (existingUser) {
-        throw new Error('Это ��мя пользователя уже занято');
+        throw new Error('Это имя пользователя уже занято');
       }
 
       // Upload files if present

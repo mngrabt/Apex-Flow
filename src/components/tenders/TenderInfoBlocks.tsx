@@ -36,7 +36,7 @@ export default function TenderInfoBlocks({
   return (
     <div className="space-y-6">
       {/* Primary info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 max-[1249px]:grid-cols-1 gap-4">
         <InfoBlock
           label="Количество"
           value={`${item.quantity} ${item.unitType}`}

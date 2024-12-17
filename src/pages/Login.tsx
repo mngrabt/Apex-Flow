@@ -32,7 +32,7 @@ export default function Login() {
       <div className="relative hidden lg:block bg-gradient-to-br from-primary/5 via-primary/10 to-transparent">
         <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-30" />
         
-        <div className="relative h-full flex flex-col items-center justify-start pt-[230px] p-20">
+        <div className="relative h-full flex flex-col items-center justify-start pt-[25vh] min-pt-[200px] max-pt-[260px] p-20">
           {/* Logo */}
           <img
             src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
@@ -74,11 +74,11 @@ export default function Login() {
       <div className="flex flex-col justify-between p-8 bg-white">
         <div className="flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full">
           {/* Mobile Logo */}
-          <div className="lg:hidden mb-12">
+          <div className="lg:hidden mt-6 mb-10">
             <img
               src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
               alt="ApexFlow"
-              className="h-24"
+              className="h-20 mx-auto"
             />
           </div>
 

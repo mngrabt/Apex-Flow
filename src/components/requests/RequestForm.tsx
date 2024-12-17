@@ -302,7 +302,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                                  placeholder:text-gray-400 
                                  focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 
                                  transition-colors duration-200 outline-none"
-                        placeholder="Введите наименование"
+                        placeholder="Укажите название товара или услуги"
                       />
                     </div>
 
@@ -319,7 +319,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                                  placeholder:text-gray-400 resize-none
                                  focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 
                                  transition-colors duration-200 outline-none"
-                        placeholder="Опишите требуемые товары или услуги"
+                        placeholder="Подробно опишите требования к товарам или услугам"
                       />
                     </div>
 
@@ -357,7 +357,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                         >
                           <span className={transferFormData.categories.length === 0 ? 'text-gray-400' : ''}>
                             {transferFormData.categories.length === 0 
-                              ? 'Выберите категории' 
+                              ? 'Выберите категорию товаров/услуг' 
                               : 'Добавить категорию'}
                           </span>
                           <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
@@ -410,7 +410,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-sm font-medium text-gray-700">
-                        Тип объекта
+                        Локация
                       </label>
                       <select
                         value={transferFormData.objectType}
@@ -472,7 +472,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
 
                     <div className="space-y-1.5">
                       <label className="block text-sm font-medium text-gray-700">
-                        Срок поставки
+                        Срок исполнения
                       </label>
                       <div className="relative">
                         <input
@@ -489,7 +489,19 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                           min="1"
                         />
                         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                          <span className="text-gray-400 text-sm">дней</span>
+                          <span className="text-gray-400 text-sm">
+                            {(() => {
+                              const count = transferFormData.deadline;
+                              const lastDigit = count % 10;
+                              const lastTwoDigits = count % 100;
+
+                              if (count === 0) return 'дней';
+                              if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'дней';
+                              if (lastDigit === 1) return 'день';
+                              if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
+                              return 'дней';
+                            })()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -539,7 +551,7 @@ export default function RequestForm({ onClose, initialData }: RequestFormProps) 
                         >
                           <Upload className="h-4 w-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
                           <span className="text-sm text-gray-600 group-hover:text-gray-900">
-                            Нажмите чтобы загрузить файл
+                            Нажмите для загрузки файла
                           </span>
                         </label>
                       )}

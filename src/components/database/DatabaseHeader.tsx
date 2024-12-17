@@ -32,7 +32,7 @@ export default function DatabaseHeader({ view, onViewChange, columnOffsets = {} 
         <div className={styles.text.tableHeader}>Категория</div>
       </div>
       <div className="col-span-3 flex items-center" style={{ transform: `translateX(${offsets.contact}px)` }}>
-        <div className={styles.text.tableHeader}>Контактное лицо</div>
+        <div className={styles.text.tableHeader}>Представитель</div>
       </div>
       <div className="col-span-2 flex items-center justify-end" style={{ transform: `translateX(${offsets.notifications}px)` }}>
         <div className={styles.text.tableHeader}>Уведомления</div>

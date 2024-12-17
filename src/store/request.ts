@@ -309,12 +309,21 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
       if (hasAllSignatures) {
         if (request.type === 'cash') {
           // Create cash protocol with automatic Abdurauf signature
-          const { error: protocolError } = await supabase.rpc('create_cash_protocol', {
+          const { data: protocol, error: protocolError } = await supabase.rpc('create_cash_protocol', {
             p_request_id: requestId,
             p_current_date: date
           });
 
           if (protocolError) throw protocolError;
+
+          // Send notification about protocol needing signature
+          await sendNotification('PROTOCOL_NEEDS_SIGNATURE', {
+            name: request.items[0]?.name || `Протокол #${protocol?.id}`,
+            protocolId: protocol?.id,
+            type: 'cash',
+            department: request.department,
+            requestNumber: request.number
+          });
         } else if (request.type === 'transfer') {
           // First update request status to pending to avoid constraint violation
           const { error: updateError } = await supabase
@@ -325,13 +334,15 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
           if (updateError) throw updateError;
 
           // Create tender
-          const { error: tenderError } = await supabase
+          const { data: tender, error: tenderError } = await supabase
             .from('tenders')
             .insert({
               request_id: requestId,
               status: 'active',
               created_at: date
-            });
+            })
+            .select()
+            .single();
 
           if (tenderError) throw tenderError;
 
@@ -347,7 +358,8 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
           // Send notification about new tender
           await sendNotification('NEW_TENDER', {
             name: request.items[0]?.name || `Заявка #${request.id}`,
-            categories: request.categories || []
+            categories: request.categories || [],
+            tenderId: tender.id.toString()
           });
         }
       }

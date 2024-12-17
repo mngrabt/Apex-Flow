@@ -129,9 +129,9 @@ export default function RequestList({ requests }: RequestListProps) {
           </div>
 
           {/* Info Blocks */}
-          <div className={`grid gap-4 ${isTransfer ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <div className={`grid ${isTransfer ? 'grid-cols-3' : 'grid-cols-2'} max-[1249px]:grid-cols-1 gap-4`}>
             <InfoBlock
-              label="Создан"
+              label="Создана"
               value={formatDate(request.createdAt)}
             />
             <InfoBlock
@@ -145,7 +145,7 @@ export default function RequestList({ requests }: RequestListProps) {
             />
             {isTransfer && (
               <InfoBlock
-                label="Тип места"
+                label="Локация"
                 value={transferItem?.objectType === 'office' ? 'Офис' : 'Стройка'}
               />
             )}
@@ -154,7 +154,7 @@ export default function RequestList({ requests }: RequestListProps) {
           {/* Signatures */}
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-gray-900">Подписи</h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 max-[1249px]:grid-cols-1 gap-4">
               {REQUIRED_SIGNATURES.map((userId) => {
                 const signature = request.signatures.find((s) => s.userId === userId);
                 const userName = getUserName(userId);
@@ -168,7 +168,7 @@ export default function RequestList({ requests }: RequestListProps) {
                       {userName}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {signature ? formatDate(signature.date) : 'Не подписано'}
+                      {signature ? formatDate(signature.date) : 'Ожидается подпись'}
                     </div>
                   </div>
                 );
@@ -186,7 +186,7 @@ export default function RequestList({ requests }: RequestListProps) {
                        disabled:opacity-50 disabled:cursor-not-allowed
                        text-sm font-medium"
             >
-              {signingRequestId === request.id ? 'Подписание...' : 'Подписать'}
+              {signingRequestId === request.id ? 'Подписание...' : 'Подписать документ'}
             </button>
           )}
         </div>

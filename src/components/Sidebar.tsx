@@ -38,6 +38,7 @@ const REQUIRED_SIGNATURES = [
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isDesktop: boolean;
 }
 
 interface NavigationItem {
@@ -52,7 +53,7 @@ interface NavigationCategory {
   items: NavigationItem[];
 }
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, isDesktop }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, users } = useAuthStore(state => state);
@@ -281,9 +282,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <>
       {/* Backdrop for mobile */}
-      {isOpen && (
+      {isOpen && !isDesktop && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
           onClick={onClose}
         />
       )}
@@ -291,9 +292,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col h-screen
-        transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0
         border-r border-gray-100
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        transition-transform duration-300 ease-in-out
+        ${isDesktop ? 'relative translate-x-0' : !isOpen ? '-translate-x-full' : 'translate-x-0'}
       `}>
         {/* Logo */}
         <div className="flex-none pt-5 px-5 pb-5">

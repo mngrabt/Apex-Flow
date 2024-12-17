@@ -38,7 +38,7 @@ export default function CompanyInfoStep({ formData, onChange, onNext }: CompanyI
 
   return (
     <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-      <h2 className={`${styles.text.heading} mb-6`}>Информация о компании</h2>
+      <h2 className={`${styles.text.heading} mb-6`}>Данные организации</h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -63,7 +63,7 @@ export default function CompanyInfoStep({ formData, onChange, onNext }: CompanyI
 
         <div>
           <label className={`block ${styles.text.label} mb-2`}>
-            Контактное лицо
+            Представитель
           </label>
           <input
             type="text"

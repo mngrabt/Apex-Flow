@@ -94,9 +94,8 @@ BEGIN
         IF v_chat_id IS NOT NULL THEN
             -- Format message with the specified format
             v_message := format(
-                '📝 Новая заявка на налчиные требует номера%s%s',
-                E'\n\n',
-                'Название: ' || COALESCE(v_request_name, 'Без названия')
+                'Заявка на наличный расчет «%s» ожидает присвоения номера',
+                COALESCE(v_request_name, 'Не указано')
             );
 
             -- Create notification

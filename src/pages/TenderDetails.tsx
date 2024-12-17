@@ -304,10 +304,10 @@ export default function TenderDetails() {
                     <Users className="w-6 h-6 text-primary" />
                   </div>
                   <h3 className="text-base font-medium text-gray-900 mb-1">
-                    Нет поставщиков
+                    Ожидаем предложений
                   </h3>
                   <p className="text-sm text-gray-500">
-                    В этом тендере пока нет поставщиков
+                    В данный тендер еще не поступило предложений
                   </p>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function TenderDetails() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                        <div className="text-sm text-gray-500 mb-1">Представитель</div>
                         <div className="font-medium text-gray-900">{supplier.contactPerson}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-4">
@@ -404,7 +404,7 @@ export default function TenderDetails() {
                             className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
                           >
                             <Download className="w-4 h-4" />
-                            Коммерческое предложение
+                            Предложение участника
                           </a>
                           {canEditSupplierContent(supplier.id) && (
                             <button
@@ -467,12 +467,12 @@ export default function TenderDetails() {
                         `}
                       >
                         {selectedWinnerId === supplier.id
-                          ? 'Нажмите чтобы отменить выбор'
+                          ? 'Отменить назначение'
                           : selectedWinnerId && selectedReserveId === supplier.id
-                            ? 'Нажмите чтобы отменить выбор'
+                            ? 'Отменить назначение'
                             : selectedWinnerId
-                              ? 'Выбрать резервным'
-                              : 'Выбрать побдителем'
+                              ? 'Назначить резервным'
+                              : 'Назначить победителем'
                         }
                       </button>
                     )}
@@ -526,7 +526,7 @@ export default function TenderDetails() {
           {/* Request Information */}
           <div className="bg-white rounded-2xl p-6 shadow-sm order-1 lg:order-2">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Информация о заявке</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Параметры заявки</h2>
               {request.documentUrl && (
                 <a
                   href={request.documentUrl}
@@ -666,8 +666,8 @@ export default function TenderDetails() {
 
       {deletingFileId && (
         <ConfirmModal
-          title="Удаление файла"
-          message="Вы уверены, что хотите удалить коммерческое предложение?"
+          title="Удаление предложения"
+          message="Вы действительно хотите удалить предложение участника?"
           confirmText="Удалить"
           cancelText="Отмена"
           onConfirm={() => handleFileDelete(deletingFileId)}
@@ -689,10 +689,10 @@ export default function TenderDetails() {
               <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">
-                    {selectedReserveId ? 'Выбор победителей' : 'Выбор победителя'}
+                    {selectedReserveId ? 'Назначение победителей тендера' : 'Назначение победителя тендера'}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    Укажите причину выбора победителя
+                    {selectedReserveId ? 'Обоснования выбора победителей' : 'Обоснование выбора победителя'}
                   </p>
                 </div>
                 <button
@@ -729,7 +729,7 @@ export default function TenderDetails() {
                                    focus:border-primary focus:ring-2 focus:ring-primary/10 
                                    transition-colors duration-200 outline-none"
                           rows={3}
-                          placeholder="Опишите причину выбора победителя..."
+                          placeholder="Укажите обоснование выбора основного победителя..."
                           required
                         />
                       </div>
@@ -767,7 +767,7 @@ export default function TenderDetails() {
                   disabled={!winnerReason.trim()}
                   className="h-11 px-6 rounded-xl text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Подтвердить
+                  Утвердить выбор
                 </button>
               </div>
             </div>

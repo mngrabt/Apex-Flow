@@ -139,7 +139,7 @@ export async function generateCashRequestTemplate(protocol: Protocol): Promise<s
     </div>
 
     <div class="title">
-        Заявка
+        Заявка № ${protocol.number || 'б/н'}
     </div>
     <div class="subtitle">
         о выдаче наличных средств

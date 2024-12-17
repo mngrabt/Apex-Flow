@@ -102,9 +102,8 @@ BEGIN
         IF v_chat_id IS NOT NULL THEN
             -- Format message with the specified format
             v_message := format(
-                '📝 Новый протокол требует номера%s%s',
-                E'\n\n',
-                'Название: ' || COALESCE(v_request_name, 'Без названия')
+                'Протокол «%s» ожидает присвоения номера',
+                COALESCE(v_request_name, 'Не указано')
             );
 
             -- Create notification
@@ -121,9 +120,10 @@ BEGIN
                     'name', v_request_name,
                     'message', v_message,
                     'chat_id', v_chat_id,
-                    'protocolId', NEW.id,
-                    'tenderId', NEW.tender_id,
-                    'requestId', NEW.request_id
+                    'department', COALESCE(
+                        (SELECT department FROM requests WHERE id = NEW.request_id),
+                        (SELECT r.department FROM tenders t JOIN requests r ON r.id = t.request_id WHERE t.id = NEW.tender_id)
+                    )
                 ),
                 NOW(),
                 false,

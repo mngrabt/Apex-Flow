@@ -5,6 +5,7 @@ import JSZip from 'jszip';
 import { generateProtocolTemplate } from '../utils/templates/protocolTemplate';
 import { generateRequestTemplate } from '../utils/templates/requestTemplate';
 import { generateCashRequestTemplate } from '../utils/templates/cashRequestTemplate';
+import { sendNotification } from '../services/notificationService';
 
 // Signature URLs for cash requests
 const SIGNATURE_URLS: Record<string, string> = {
@@ -47,6 +48,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
           status,
           finance_status,
           department,
+          number,
           archived_protocol:archived_protocols(
             created_at,
             zip_url,
@@ -124,6 +126,9 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
           ? protocol.request?.created_at 
           : protocol.tender?.request?.created_at;
 
+        // Use protocol.number as the primary source, fallback to archived_protocol.number
+        const protocolNumber = protocol.number || protocol.archived_protocol?.number;
+
         return {
           id: protocol.id,
           tenderId: protocol.tender?.id,
@@ -132,7 +137,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
           financeStatus: protocol.finance_status,
           createdAt: requestCreatedAt || protocol.archived_protocol?.created_at,
           zipUrl: protocol.archived_protocol?.zip_url,
-          number: protocol.archived_protocol?.number,
+          number: protocolNumber,
           department: protocol.department,
           items: protocol.type === 'cash' && protocol.request ? 
             protocol.request.items.map(item => ({
@@ -216,13 +221,73 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
 
   updateProtocolNumber: async (protocolId: string, number: string) => {
     try {
-      const { error } = await supabase
+      console.log('Starting protocol number update:', { protocolId, number });
+
+      // Update both tables in sequence
+      const { error: protocolError } = await supabase
+        .from('protocols')
+        .update({ number })
+        .eq('id', protocolId);
+
+      if (protocolError) {
+        console.error('Error updating protocols table:', protocolError);
+        throw protocolError;
+      }
+
+      const { error: archiveError } = await supabase
         .from('archived_protocols')
         .update({ number })
         .eq('protocol_id', protocolId);
 
-      if (error) throw error;
+      if (archiveError) {
+        console.error('Error updating archived_protocols table:', archiveError);
+        throw archiveError;
+      }
+
+      // Get protocol details for notification
+      const { data: protocol, error: fetchError } = await supabase
+        .from('protocols')
+        .select(`
+          id,
+          type,
+          tender:tenders(
+            request:requests(
+              items:request_items(name)
+            )
+          ),
+          request:requests(
+            items:request_items(name)
+          )
+        `)
+        .eq('id', protocolId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching protocol details:', fetchError);
+        throw fetchError;
+      }
+
+      // Get the protocol name based on type
+      const protocolName = protocol.type === 'cash'
+        ? protocol.request?.items?.[0]?.name
+        : protocol.tender?.request?.items?.[0]?.name;
+
+      // Send different notifications based on type
+      if (protocol.type === 'cash') {
+        await sendNotification('CASH_REQUEST_GOT_NUMBER', {
+          name: protocolName || `Заявка на наличные #${protocolId}`,
+          number: number
+        });
+      } else {
+        await sendNotification('PROTOCOL_GOT_NUMBER', {
+          name: protocolName || `Протокол #${protocolId}`,
+          number: number
+        });
+      }
+
+      console.log('Successfully updated protocol number and sent notification');
       await get().fetchArchivedProtocols();
+      console.log('Successfully refreshed archived protocols');
     } catch (error) {
       console.error('Error updating protocol number:', error);
       throw error;

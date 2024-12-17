@@ -92,7 +92,7 @@ export default function SupplierList({
             {/* Info Grid */}
             <div className="grid grid-cols-2 gap-4">
               <InfoBlock
-                label="Контактное лицо"
+                label="Представитель"
                 value={supplier.contactPerson}
               />
               <InfoBlock

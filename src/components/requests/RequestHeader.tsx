@@ -33,7 +33,18 @@ export default function RequestHeader({ onCreateRequest, canCreateRequest }: Req
             Заявки
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {activeRequests.length} {activeRequests.length === 1 ? 'заявка' : 'заявок'}
+            {activeRequests.length}{' '}
+            {(() => {
+              const count = activeRequests.length;
+              const lastDigit = count % 10;
+              const lastTwoDigits = count % 100;
+
+              if (count === 0) return 'заявок';
+              if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'заявок';
+              if (lastDigit === 1) return 'заявка';
+              if (lastDigit >= 2 && lastDigit <= 4) return 'заявки';
+              return 'заявок';
+            })()}
           </p>
         </div>
       </div>

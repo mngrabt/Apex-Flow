@@ -92,7 +92,7 @@ ${tender.winnerReason ? `\nПричина выбора победителя: ${t
 
 Председатель закупочной комиссии _________________  У.А. Умаров
 
-Продакшн менеджер               _________________  А.Гани
+Продакшен менеджер               _________________  А.Гани
 
 Член закупочной комиссии        _________________  Ф.А. Бабаджанов
 
@@ -199,7 +199,7 @@ export function generateRequestTemplate(request: Request): string {
                 <div style="margin-left: 10px;">Ф.А. Бабаджанов</div>
             </div>
             <div style="display: flex;">
-                <div style="width: 40%;">Продакшн менеджер</div>
+                <div style="width: 40%;">Продакшен менеджер</div>
                 <div style="width: 25%; border-bottom: 1px solid black;"></div>
                 <div style="margin-left: 10px;">А.Гани</div>
             </div>

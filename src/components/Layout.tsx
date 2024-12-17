@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { Menu, X } from 'lucide-react';
@@ -7,10 +7,23 @@ import Header from './Header';
 import { styles } from '../utils/styleConstants';
 
 export default function Layout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1620);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(isDesktop);
   const [searchQuery, setSearchQuery] = useState('');
   const user = useAuthStore(state => state.user);
   const location = useLocation();
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 1620;
+      setIsDesktop(desktop);
+      setIsSidebarOpen(desktop);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Only show search bar in specific routes and not in supplier details
   const showSearch = ['/applications', '/archive', '/finances'].includes(location.pathname) || 
@@ -26,18 +39,19 @@ export default function Layout() {
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Mobile sidebar backdrop */}
-      {isSidebarOpen && (
+      {isSidebarOpen && !isDesktop && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className="flex-none border-r border-gray-100">
+      <div className="flex-none">
         <Sidebar 
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={() => !isDesktop && setIsSidebarOpen(false)}
+          isDesktop={isDesktop}
         />
       </div>
 
@@ -47,16 +61,18 @@ export default function Layout() {
           searchQuery={showSearch ? searchQuery : undefined}
           onSearchChange={showSearch ? setSearchQuery : undefined}
         >
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2.5 hover:bg-primary/10 rounded-xl transition-colors lg:hidden"
-          >
-            {isSidebarOpen ? (
-              <X className="w-5 h-5 text-gray-500" />
-            ) : (
-              <Menu className="w-5 h-5 text-gray-500" />
-            )}
-          </button>
+          {!isDesktop && (
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2.5 hover:bg-primary/10 rounded-xl transition-colors"
+            >
+              {isSidebarOpen ? (
+                <X className="w-5 h-5 text-gray-500" />
+              ) : (
+                <Menu className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+          )}
         </Header>
         
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">

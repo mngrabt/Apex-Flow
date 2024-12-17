@@ -125,7 +125,7 @@ export default function SupplierDetails({ supplierId, onBack }: SupplierDetailsP
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoBlock
-                  label="Контактное лицо"
+                  label="Представитель"
                   value={supplier.contactPerson}
                 />
                 <InfoBlock

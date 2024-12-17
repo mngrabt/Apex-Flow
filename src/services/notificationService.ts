@@ -21,6 +21,7 @@ export type NotificationType =
   | 'TENDER_WINNER_SELECTED'
   | 'PROTOCOL_NEEDS_NUMBER'
   | 'PROTOCOL_GOT_NUMBER'
+  | 'CASH_REQUEST_GOT_NUMBER'
   | 'SUPPLIER_ADDED_TO_TENDER'
   | 'SUPPLIER_REMOVED_FROM_TENDER'
   | 'SUPPLIER_UPDATED_IN_TENDER'
@@ -35,6 +36,22 @@ export type NotificationType =
   | 'PROTOCOL_NOT_SUBMITTED_OVERDUE'
   | 'EVENT_COMPLETED'
   | 'PROTOCOL_NUMBER_NEEDED';
+
+// Add interface for NEW_TENDER notification data
+interface NewTenderNotificationData {
+  name: string;
+  categories: string[];
+  tenderId: string;
+}
+
+// Helper function to validate NEW_TENDER data
+function validateNewTenderData(data: any): data is NewTenderNotificationData {
+  if (!data || typeof data !== 'object') return false;
+  if (typeof data.name !== 'string') return false;
+  if (!Array.isArray(data.categories)) return false;
+  if (typeof data.tenderId !== 'string') return false;
+  return true;
+}
 
 // Helper function to get notification recipients
 function getNotificationRecipients(type: NotificationType, options?: any): string[] {
@@ -57,7 +74,8 @@ function getNotificationRecipients(type: NotificationType, options?: any): strin
       return [USER_IDS.DINARA];
     
     case 'PROTOCOL_GOT_NUMBER':
-      return [USER_IDS.UMARALI];
+    case 'CASH_REQUEST_GOT_NUMBER':
+      return [USER_IDS.ABDURAUF, USER_IDS.UMARALI];
     
     case 'SUPPLIER_ADDED_TO_TENDER':
     case 'SUPPLIER_REMOVED_FROM_TENDER':
@@ -104,64 +122,64 @@ function getNotificationRecipients(type: NotificationType, options?: any): strin
 function generateNotificationMessage(type: NotificationType, data: any): string {
   switch (type) {
     case 'REQUEST_NEEDS_SIGNATURE':
-      return `🖋 Новая заявка требует вашей подписи:\n${data.name}`;
+      return `Заявка «${data.name}» ожидает вашей подписи`;
     
     case 'PROTOCOL_NEEDS_SIGNATURE':
-      return `🖋 Новый протокол требует вашей подписи:\n${data.name}`;
+      return `Протокол «${data.name}» ожидает вашей подписи`;
     
     case 'NEW_TENDER':
-      return `🔔 Новый тендер:\n${data.name}`;
+      console.log('Generating NEW_TENDER notification with data:', data);
+      return `Открыт новый тендер «${data.name}»`;
     
     case 'TENDER_WINNER_SELECTED':
-      return `🏆 Выбран победитель тендера:\n${data.tenderName}\nПобедитель: ${data.winnerName}${data.reserveName ? `\nРезерв: ${data.reserveName}` : ''}`;
-    
-    case 'PROTOCOL_NEEDS_NUMBER':
-      return `📝 ${data.type === 'cash' ? 'Кассовый протокол' : 'Протокол'} из отдела ${data.department} ожидает присвоения номера${data.requestNumber ? `\nНомер заявки: ${data.requestNumber}` : ''}`;
+      return `В тендере «${data.tenderName}» определены победители:\nОсновной победитель: ${data.winnerName}${data.reserveName ? `\nРезервный победитель: ${data.reserveName}` : ''}`;
     
     case 'PROTOCOL_GOT_NUMBER':
-      return `✅ Протоколу присвоен номер и он готов к подаче:\n${data.name}\nНомер: ${data.number}`;
+      return `Протоколу «${data.name}» был присвоен номер «${data.number}» и он готов к отправке на оплату`;
+    
+    case 'CASH_REQUEST_GOT_NUMBER':
+      return `Заявке на наличный расчет «${data.name}» был присвоен номер «${data.number}» и она готова к отправке на оплату`;
     
     case 'SUPPLIER_ADDED_TO_TENDER':
-      return `➕ Новый поставщик добавлен в тендер:\n${data.supplierName}\nТендер: ${data.tenderName}`;
+      return `Предложение от организации «${data.supplierName}» былы добавлено в тендер «${data.tenderName}»`;
     
     case 'SUPPLIER_REMOVED_FROM_TENDER':
-      return `➖ Поставщик удален из тендера:\n${data.supplierName}\nТендер: ${data.tenderName}`;
+      return `Участник «${data.supplierName}» был удален из тендера «${data.tenderName}»`;
     
     case 'SUPPLIER_UPDATED_IN_TENDER':
-      return `✏️ Поставщик изменен в тендере:\n${data.supplierName}\nТендер: ${data.tenderName}\nИзменено: ${data.updatedFields}`;
+      return `Информация об участнике «${data.supplierName}» была изменена в тендере «${data.tenderName}»\nИзменено: ${data.updatedFields}`;
     
     case 'NEW_APPLICATION':
-      return `📋 Новая заява на регистрацию от компании:\n${data.companyName}`;
+      return `Поступило новое заявление на регистрацию от организации «${data.companyName}»`;
     
     case 'NEW_EVENT_SCHEDULED':
-      return `📅 Новое событие запланировано:\n${data.title}\nДата: ${data.date}`;
-    
-    case 'EVENT_NEEDS_SCHEDULING':
-      return `⚠️ Новое событие требует планиро��ания:\n${data.title}`;
+      return `Объем «${data.title}» был запланирован на ${data.date}`;
     
     case 'APPLICATION_STATUS_CHANGED':
-      return `ℹ️ Статус вашей заявки изменен на: ${data.status}\nКомпания: ${data.companyName}`;
+      return `Статус вашей заявки изменен на: ${data.status}\nОрганизация: ${data.companyName}`;
     
     case 'PROTOCOL_SUBMITTED':
-      return `📨 Новый протокол подан в финансовый отдел:\n${data.name}`;
+      return `На оплату был подан новый протокол «${data.name}»`;
     
     case 'PROTOCOL_PAID':
-      return `💰 Протокол отмечен как оплаченный:\n${data.name}`;
+      return `Объем «${data.name}» был оплачен и требует определения дедлайна`;
     
     case 'NEW_TASK':
-      return `📋 Новая задача создана:\n${data.name}`;
+      return `Была создана новая задача «${data.name}»`;
     
     case 'PROTOCOL_WAITING_OVERDUE':
-      return `⚠️ Протокол ожидает оплату более 5 дней:\n${data.name}`;
+      return `Протокол «${data.name}» находится в ожидание оплаты уже более 5 дней`;
     
     case 'PROTOCOL_NOT_SUBMITTED_OVERDUE':
-      return `⚠️ Протокол не подан более 2 дней:\n${data.name}`;
+      return `Протокол «${data.name}» находится в ожидание подачи на оплату уже более 2 дней`;
     
     case 'EVENT_COMPLETED':
-      return `✅ Событие отмечено как выполненное:\n${data.title}`;
+      return `Объем «${data.title}» был выполнен`;
     
     case 'PROTOCOL_NUMBER_NEEDED':
-      return `📝 ${data.type === 'cash' ? 'Кассовый протокол' : 'Протокол'} из отдела ${data.department} ожидает присвоения номера${data.requestNumber ? `\nНомер заявки: ${data.requestNumber}` : ''}`;
+      return data.type === 'cash' 
+        ? `Заявка на наличный расчет «${data.name}» ожидает присвоения номера`
+        : `Протокол «${data.name}» ожидает присвоения номера`;
     
     default:
       return '';
@@ -171,7 +189,16 @@ function generateNotificationMessage(type: NotificationType, data: any): string 
 // Main notification function
 export async function sendNotification(type: NotificationType, data: any) {
   try {
-    console.log('Sending notification:', { type, data });
+    console.log('Raw notification data:', data);  // Add raw data logging
+
+    // Validate NEW_TENDER data
+    if (type === 'NEW_TENDER') {
+      console.log('Validating NEW_TENDER data:', { ...data });  // Spread to see all properties
+      if (!validateNewTenderData(data)) {
+        console.error('Invalid NEW_TENDER notification data:', data);
+        throw new Error(`Invalid NEW_TENDER notification data: missing required fields. Got: ${JSON.stringify(data)}`);
+      }
+    }
 
     const recipients = getNotificationRecipients(type, data);
     const message = generateNotificationMessage(type, data);
@@ -194,7 +221,7 @@ export async function sendNotification(type: NotificationType, data: any) {
     }
   } catch (error) {
     console.error('Failed to send notification:', error);
-    throw error; // Re-throw to handle in the calling function
+    throw error;
   }
 }
 

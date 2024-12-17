@@ -19,6 +19,10 @@ export default {
         'primary-800': '#662b00',
         'primary-900': '#331500',
       },
+      screens: {
+        'card': '1250px',
+        'desktop': '1620px',
+      },
       keyframes: {
         'slide-in': {
           '0%': { transform: 'translateX(100%)', opacity: 0 },

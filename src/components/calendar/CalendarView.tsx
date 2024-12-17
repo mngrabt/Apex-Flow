@@ -128,11 +128,22 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
                   {format(selectedDate, 'LLLL yyyy', { locale: ru })}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {events.length} {events.length === 1 ? 'событие' : 'событий'} запланировано
+                  {events.length}{' '}
+                  {(() => {
+                    const count = events.length;
+                    const lastDigit = count % 10;
+                    const lastTwoDigits = count % 100;
+
+                    if (count === 0) return 'событий';
+                    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'событий';
+                    if (lastDigit === 1) return 'событие';
+                    if (lastDigit >= 2 && lastDigit <= 4) return 'события';
+                    return 'событий';
+                  })()} запланировано
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="flex bg-gray-50 rounded-lg p-1">
                   <button
                     onClick={() => navigateMonth('prev')}
@@ -157,10 +168,10 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
                   </button>
                 </div>
 
-                <div className="flex bg-gray-50 rounded-lg p-1">
+                <div className="flex bg-gray-50 rounded-lg p-1 w-full sm:w-auto">
                   <button
                     onClick={() => setView('month')}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all
+                    className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-md text-sm font-medium transition-all
                       ${view === 'month' 
                         ? 'bg-primary/10 text-primary' 
                         : 'hover:bg-white text-gray-600 hover:text-gray-900'}`}
@@ -169,7 +180,7 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
                   </button>
                   <button
                     onClick={() => setView('schedule')}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all
+                    className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-md text-sm font-medium transition-all
                       ${view === 'schedule' 
                         ? 'bg-primary/10 text-primary' 
                         : 'hover:bg-white text-gray-600 hover:text-gray-900'}`}
@@ -208,10 +219,11 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
                         key={index}
                         onClick={() => onSelectDate(day)}
                         className={`
-                          aspect-square p-1.5 cursor-pointer rounded-lg bg-white
+                          aspect-square p-1.5 cursor-pointer rounded-lg
                           transition-all duration-200 ease-in-out relative group
                           ${!isCurrentMonth ? 'opacity-40' : ''}
                           ${isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:bg-gray-50'}
+                          ${hasEvents && !isSelected ? 'lg:bg-white sm:bg-primary/5' : 'lg:bg-white bg-white'}
                         `}
                       >
                         <div className="flex items-center justify-center h-full">
@@ -225,8 +237,9 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
                           </div>
                         </div>
                         
+                        {/* Show event counter only on desktop */}
                         {hasEvents && (
-                          <div className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center 
+                          <div className="absolute top-1 right-1 w-5 h-5 hidden lg:flex items-center justify-center 
                                       bg-primary/10 text-primary text-[11px] font-medium rounded-full">
                             {dayEvents.length}
                           </div>
@@ -389,7 +402,7 @@ export default function CalendarView({ selectedDate, onSelectDate, events }: Cal
 
         {/* Completed Events */}
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h3 className="text-sm font-medium text-gray-900 mb-4">Завершенны�� события</h3>
+          <h3 className="text-sm font-medium text-gray-900 mb-4">Завершенные события</h3>
           <div className="space-y-2">
             {events.filter(event => event.completed).map(event => (
               <div

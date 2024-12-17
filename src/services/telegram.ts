@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-const BOT_TOKEN = '7832369613:AAGiV_Ct8Kd6MS6C-2WpRT6pJrawHetIw_U';
-const BOT_USERNAME = '@ApexFlowBot';
+const BOT_TOKEN = '7832369613:AAFr_slHVkZ-Dx8Th_IX0GehbnFutE_CHmk';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 export async function sendTelegramMessage(chatId: number | string, message: string) {
@@ -65,9 +64,8 @@ export async function sendTelegramNotification(userIds: string[], message: strin
 
 export async function verifyTelegramChatId(phoneNumber: string): Promise<number | null> {
   try {
-    // Clean and format phone number
+    // Clean the number but don't add prefix - trust the format we receive
     const cleanNumber = phoneNumber.replace(/\D/g, '');
-    const formattedNumber = cleanNumber.startsWith('998') ? cleanNumber : `998${cleanNumber}`;
 
     // Add delay to ensure verification record is created
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -76,7 +74,7 @@ export async function verifyTelegramChatId(phoneNumber: string): Promise<number 
     const { data, error } = await supabase
       .from('telegram_verifications')
       .select('chat_id')
-      .eq('phone_number', formattedNumber)
+      .eq('phone_number', cleanNumber)
       .maybeSingle();
 
     if (error) {
@@ -91,35 +89,17 @@ export async function verifyTelegramChatId(phoneNumber: string): Promise<number 
 }
 
 export function generateNotificationMessage(
-  type: 'application' | 'application_approved' | 'application_rejected' | 'tender',
+  type: 'application' | 'application_approved' | 'application_rejected',
   companyName: string,
-  options?: { reason?: string; username?: string; password?: string }
-) {
+  additionalInfo?: { reason?: string }
+): string {
   switch (type) {
-    case 'application_approved':
-      return `🎉 Поздравляем! Ваша заявка на регистрацию компании "${companyName}" одобрена.
-
-Данные для входа в систему:
-👤 Логин: ${options?.username}
-🔑 Пароль: ${options?.password}
-
-Вы можете войти в систему по адресу: https://apexflow.uz/login
-
-Добро пожаловать в ApexFlow!`;
-
-    case 'application_rejected':
-      return `❌ К сожалению, ваша заявка на регистрацию компании "${companyName}" отклонена.
-
-Причина: ${options?.reason || 'Не указана'}
-
-Если у вас есть вопросы, пожалуйста, свяжитесь с нами.`;
-
     case 'application':
-      return `📝 Новая заявка на регистрацию от компании "${companyName}"`;
-
-    case 'tender':
-      return `🔔 Новый тендер создан. Пожалуйста, проверьте систему для получения подробной информации.`;
-
+      return `Новая заявка на регистрацию от компании "${companyName}"`;
+    case 'application_approved':
+      return `Ваша заявка на регистрацию была одобрена. Вы можете войти в систему используя предоставленные учетные данные.`;
+    case 'application_rejected':
+      return `Ваша заявка на регистрацию была отклонена.\n\nПричина: ${additionalInfo?.reason || 'Не указана'}`;
     default:
       return '';
   }

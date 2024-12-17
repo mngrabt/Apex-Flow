@@ -10,16 +10,21 @@ import { sendNotification } from '../services/notificationService';
 
 // Categories for selection
 const CATEGORIES = [
-  'Строительные материалы',
-  'Электрооборудование',
-  'Сантехника',
-  'Инструменты',
-  'Спецодежда',
-  'Металлопрокат',
-  'Химическая продукция',
-  'Транспортные услуги',
-  'Ремонтные работы',
-  'Прочее'
+  'Металлоконструкции',
+  'Типография',
+  'Полиграфия',
+  'Акриловые изделия',
+  'LED-освещение',
+  'Широкоформатная печать',
+  'Монтажные работы',
+  'Текстиль',
+  'Плоттерная резка',
+  'Лазерная резка',
+  'Пленки и оклейка',
+  'Строительные работы',
+  'Диджитал',
+  'Флаги и флагштоки',
+  'Сувиниры'
 ].sort();
 
 interface FormData {
@@ -81,11 +86,6 @@ export default function Register() {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [hasDownloadedForm, setHasDownloadedForm] = useState(false);
-
-  // Start Telegram bot polling when component mounts
-  useEffect(() => {
-    setupWebhook().catch(console.error);
-  }, []);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -309,7 +309,7 @@ export default function Register() {
       return false;
     }
     if (formData.password.length < 8) {
-      setError('Пароль должен содержать минимум 8 символов');
+      setError('П��роль должен содержать минимум 8 символов');
       return false;
     }
     return true;
@@ -323,7 +323,7 @@ export default function Register() {
     
     // Add phone number length validation
     if (formData.phoneNumber.replace(/\D/g, '').length !== 9) {
-      setError('Номер телефона должен содержать 9 цифр');
+      setError('Номер телефона должен содер��ать 9 цифр');
       return false;
     }
 
@@ -568,7 +568,7 @@ export default function Register() {
       <div className="relative hidden lg:block bg-gradient-to-br from-primary/5 via-primary/10 to-transparent">
         <div className="absolute inset-0 bg-[url('/patterns/grid.svg')] opacity-30" />
         
-        <div className="relative h-full flex flex-col items-center justify-start pt-[230px] p-20">
+        <div className="relative h-full flex flex-col items-center justify-center p-20">
           {/* Logo */}
           <img
             src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
@@ -621,11 +621,11 @@ export default function Register() {
       <div className="flex flex-col justify-between p-8 bg-white overflow-y-auto">
         <div className="flex-1 flex flex-col max-w-sm mx-auto w-full">
           {/* Mobile Logo */}
-          <div className="lg:hidden mb-12">
+          <div className="lg:hidden mt-6 mb-10">
             <img
               src={`${supabase.storage.from('logos').getPublicUrl('vertical orange.svg').data.publicUrl}`}
               alt="ApexFlow"
-              className="h-24 mx-auto"
+              className="h-20 mx-auto"
             />
           </div>
 
@@ -640,7 +640,7 @@ export default function Register() {
                   Заявка успешно отправлена!
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Ваша заявка на регистрацию принята. После проверки документов мы отправим вам уведомление в Telegram.
+                  Ваша заявка на регистрацию принята. После пр��верки документов мы отправим вам уведомление в Telegram.
                 </p>
                 <div className="text-sm text-gray-500">
                   Вы будете перенаправлены на страницу входа через {countdown} {countdown === 1 ? 'секунду' : 'секунд'}
@@ -674,7 +674,7 @@ export default function Register() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   {step === 1 && 'Создание аккаунта'}
-                  {step === 2 && 'Информация о компании'}
+                  {step === 2 && 'Данные организации'}
                   {step === 3 && 'Документы'}
                   {step === 4 && 'Подключение Telegram'}
                 </h2>
@@ -682,7 +682,7 @@ export default function Register() {
                   {step === 1 && 'Введите данные для создания аккаунта'}
                   {step === 2 && 'Расскажите о вашей компании'}
                   {step === 3 && 'Загрузите необходимые документы'}
-                  {step === 4 && 'Подключите Telegram для уведомлений'}
+                  {step === 4 && 'Настройка уведомлений Telegram'}
                 </p>
               </div>
 
@@ -886,7 +886,7 @@ export default function Register() {
                               <div className="max-h-60 overflow-y-auto">
                                 {filteredCategories.length === 0 ? (
                                   <div className="px-4 py-3 text-sm text-gray-500">
-                                    Ничего не найдено
+                                    ��ичего не найдено
                                   </div>
                                 ) : (
                                   filteredCategories.map(category => (
@@ -1149,7 +1149,7 @@ export default function Register() {
                     <div className="space-y-5">
                       <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 mb-6">
                         <h3 className="text-sm font-medium text-gray-900 mb-2">
-                          Подтверждение через Telegram:
+                          Порядок подключения:
                         </h3>
                         <ol className="text-sm text-gray-600 space-y-2">
                           <li className="flex items-start gap-2">
@@ -1173,7 +1173,7 @@ export default function Register() {
                               2
                             </span>
                             <span>
-                              Нажмите кнопку "Start" или отправьте команду /start
+                              Нажмите кнопку "Start"
                             </span>
                           </li>
                           <li className="flex items-start gap-2">
@@ -1181,7 +1181,7 @@ export default function Register() {
                               3
                             </span>
                             <span>
-                              Нажмите кнопку "Поделиться контактом" и разрешите боту доступ к вашему номеру телефона
+                              Нажмите кнопку "Поделиться контактом" и разре��ите боту доступ к вашему номеру телефона
                             </span>
                           </li>
                           <li className="flex items-start gap-2">

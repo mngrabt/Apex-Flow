@@ -23,7 +23,7 @@ const REQUIRED_SIGNERS = [
   },
   {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'Продакшн Менеджер',
+    role: 'Продакшен Менеджер',
     name: 'Абдурауф'
   },
   {
@@ -110,7 +110,7 @@ export default function ProtocolSignatures({
                     </div>
                   ) : (
                     <div className="text-sm text-gray-400">
-                      Ожидает подписи
+                      На рассмотрении
                     </div>
                   )}
                 </div>
@@ -135,7 +135,7 @@ export default function ProtocolSignatures({
           `}
         >
           <User2 className="w-4 h-4" />
-          {isSigningId === protocol.id ? 'Подписание...' : 'Подписать протокол'}
+          {isSigningId === protocol.id ? 'Подписание...' : 'Подписать документ'}
         </button>
       )}
     </div>

@@ -169,7 +169,7 @@ export default function ProtocolDetails() {
               </div>
 
               {/* Request Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 card:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Дата создания</div>
                   <div className="font-medium text-gray-900">
@@ -190,7 +190,7 @@ export default function ProtocolDetails() {
                 {!isCashProtocol && (
                   <>
                     <div className="bg-gray-50 rounded-xl p-4">
-                      <div className="text-sm text-gray-500 mb-1">Место доставки</div>
+                      <div className="text-sm text-gray-500 mb-1">Локация</div>
                       <div className="font-medium text-gray-900">
                         {(requestItems?.[0] as TransferRequestItem)?.objectType === 'office' ? 'Офис' : 'Стройка'}
                       </div>
@@ -219,7 +219,7 @@ export default function ProtocolDetails() {
                     <div className="font-medium text-gray-900">{winner.companyName}</div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                    <div className="text-sm text-gray-500 mb-1">Представитель</div>
                     <div className="font-medium text-gray-900">{winner.contactPerson || '—'}</div>
                   </div>
                 </div>
@@ -243,7 +243,7 @@ export default function ProtocolDetails() {
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
                       >
                         <Download className="w-4 h-4" />
-                        Коммерческое предложение
+                        Предложение участника
                       </a>
                     </div>
                   </div>
@@ -255,7 +255,7 @@ export default function ProtocolDetails() {
           {/* Winner Selection Reason */}
           {!isCashProtocol && protocolData.tender?.winnerReason && (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Причина выбора</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Обоснование выбора</h2>
               <p className="text-sm text-gray-500">{protocolData.tender.winnerReason}</p>
             </div>
           )}
@@ -271,7 +271,7 @@ export default function ProtocolDetails() {
                     <div className="font-medium text-gray-900">{reserveWinner.companyName}</div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                    <div className="text-sm text-gray-500 mb-1">Представитель</div>
                     <div className="font-medium text-gray-900">{reserveWinner.contactPerson || '—'}</div>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export default function ProtocolDetails() {
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
                       >
                         <Download className="w-4 h-4" />
-                        Коммерческое предложение
+                        Предложение участника
                       </a>
                     </div>
                   </div>
@@ -328,7 +328,7 @@ export default function ProtocolDetails() {
                     <div className="font-medium text-gray-900">{winner.companyName}</div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                    <div className="text-sm text-gray-500 mb-1">Представитель</div>
                     <div className="font-medium text-gray-900">{winner.contactPerson || '—'}</div>
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export default function ProtocolDetails() {
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
                       >
                         <Download className="w-4 h-4" />
-                        Коммерческое предложение
+                        Предложение участника
                       </a>
                     </div>
                   </div>
@@ -363,7 +363,7 @@ export default function ProtocolDetails() {
 
           {!isCashProtocol && protocolData.tender?.winnerReason && (
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Причина выбора</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Обоснование выбора</h2>
               <p className="text-sm text-gray-500">{protocolData.tender.winnerReason}</p>
             </div>
           )}
@@ -378,7 +378,7 @@ export default function ProtocolDetails() {
                     <div className="font-medium text-gray-900">{reserveWinner.companyName}</div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                    <div className="text-sm text-gray-500 mb-1">Представитель</div>
                     <div className="font-medium text-gray-900">{reserveWinner.contactPerson || '—'}</div>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function ProtocolDetails() {
                         className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm font-medium"
                       >
                         <Download className="w-4 h-4" />
-                        Коммерческое предложение
+                        Предложение участника
                       </a>
                     </div>
                   </div>
@@ -452,7 +452,7 @@ export default function ProtocolDetails() {
               </div>
 
               {/* Request Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 card:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Дата создания</div>
                   <div className="font-medium text-gray-900">
@@ -473,7 +473,7 @@ export default function ProtocolDetails() {
                 {!isCashProtocol && (
                   <>
                     <div className="bg-gray-50 rounded-xl p-4">
-                      <div className="text-sm text-gray-500 mb-1">Место доставки</div>
+                      <div className="text-sm text-gray-500 mb-1">Локация</div>
                       <div className="font-medium text-gray-900">
                         {(requestItems?.[0] as TransferRequestItem)?.objectType === 'office' ? 'Офис' : 'Стройка'}
                       </div>

@@ -84,7 +84,7 @@ export default function FinanceDetails({ protocol, onBack }: FinanceDetailsProps
             <h3 className={`${styles.text.subheading} mb-2`}>Победитель тендера</h3>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <InfoBlock label="Компания" value={winner.companyName || '-'} />
-              <InfoBlock label="Контактное лицо" value={winner.contactPerson || '-'} />
+              <InfoBlock label="Представитель" value={winner.contactPerson || '-'} />
             </div>
             <div className="grid grid-cols-4 gap-4">
               <InfoBlock label="Телефон" value={winner.contactNumber || '-'} />
@@ -97,7 +97,7 @@ export default function FinanceDetails({ protocol, onBack }: FinanceDetailsProps
                 onClick={() => window.open(winner.proposalUrl, '_blank')}
                 className="mt-4 w-full bg-white rounded-xl p-4 text-left hover:bg-gray-100 transition-colors"
               >
-                <h4 className="text-sm font-semibold text-gray-500 mb-1">Коммерческое предложение</h4>
+                <h4 className="text-sm font-semibold text-gray-500 mb-1">Предложение участника</h4>
                 <p className={styles.text.body}>Скачать</p>
               </button>
             )}
@@ -110,7 +110,7 @@ export default function FinanceDetails({ protocol, onBack }: FinanceDetailsProps
             <h3 className={`${styles.text.subheading} mb-2`}>Резервный победитель</h3>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <InfoBlock label="Компания" value={reserveWinner.companyName || '-'} />
-              <InfoBlock label="Контактное лицо" value={reserveWinner.contactPerson || '-'} />
+              <InfoBlock label="Представитель" value={reserveWinner.contactPerson || '-'} />
             </div>
             <div className="grid grid-cols-4 gap-4">
               <InfoBlock label="Телефон" value={reserveWinner.contactNumber || '-'} />
@@ -123,7 +123,7 @@ export default function FinanceDetails({ protocol, onBack }: FinanceDetailsProps
                 onClick={() => window.open(reserveWinner.proposalUrl, '_blank')}
                 className="mt-4 w-full bg-white rounded-xl p-4 text-left hover:bg-gray-100 transition-colors"
               >
-                <h4 className="text-sm font-semibold text-gray-500 mb-1">Коммерческое предложение</h4>
+                <h4 className="text-sm font-semibold text-gray-500 mb-1">Предложение участника</h4>
                 <p className={styles.text.body}>Скачать</p>
               </button>
             )}

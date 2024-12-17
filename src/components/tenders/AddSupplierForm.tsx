@@ -128,12 +128,12 @@ export default function AddSupplierForm({ tenderId, onClose, currentUser }: AddS
           <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {currentUser?.role === 'S' ? 'Новое предложение' : 'Новый поставщик'}
+                {currentUser?.role === 'S' ? 'Подача предложения' : 'Добавление участника'}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
                 {currentUser?.role === 'S' 
-                  ? 'Заполните информацию о вашем предложении'
-                  : 'Заполните информацию о поставщике'
+                  ? 'Укажите детали вашего предложения'
+                  : 'Укажите данные участника тендера'
                 }
               </p>
             </div>
@@ -170,7 +170,7 @@ export default function AddSupplierForm({ tenderId, onClose, currentUser }: AddS
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-gray-700">
-                      Контактное лицо
+                      Представитель
                     </label>
                     <input
                       type="text"
@@ -357,7 +357,7 @@ export default function AddSupplierForm({ tenderId, onClose, currentUser }: AddS
                            disabled:opacity-50 disabled:cursor-not-allowed
                            transition-colors"
                 >
-                  {isSubmitting ? 'Добавление...' : 'Добавить поставщика'}
+                  {isSubmitting ? 'Добавление...' : 'Добавить участника'}
                 </button>
               </div>
             </div>

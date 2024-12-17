@@ -134,7 +134,7 @@ export default function ArchiveDetails({ protocolId, onBack }: ArchiveDetailsPro
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <InfoBlock label="Компания" value={winner.companyName} />
-                <InfoBlock label="Контактное лицо" value={winner.contactPerson || '-'} />
+                <InfoBlock label="Представитель" value={winner.contactPerson || '-'} />
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <InfoBlock label="Телефон" value={winner.contactNumber || '-'} />
@@ -148,7 +148,7 @@ export default function ArchiveDetails({ protocolId, onBack }: ArchiveDetailsPro
                   className="w-full bg-gray-50 rounded-2xl p-4 text-left hover:bg-gray-100 transition-colors group"
                 >
                   <h4 className="text-sm font-semibold text-gray-500 group-hover:text-primary mb-1">
-                    Коммерческое предложение
+                    Предложение участника
                   </h4>
                   <p className={`${styles.text.body} group-hover:text-primary`}>
                     Скачать
@@ -166,7 +166,7 @@ export default function ArchiveDetails({ protocolId, onBack }: ArchiveDetailsPro
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <InfoBlock label="Компания" value={reserveWinner.companyName} />
-                <InfoBlock label="Контактное лицо" value={reserveWinner.contactPerson || '-'} />
+                <InfoBlock label="Представитель" value={reserveWinner.contactPerson || '-'} />
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <InfoBlock label="Телефон" value={reserveWinner.contactNumber || '-'} />
@@ -180,7 +180,7 @@ export default function ArchiveDetails({ protocolId, onBack }: ArchiveDetailsPro
                   className="w-full bg-gray-50 rounded-2xl p-4 text-left hover:bg-gray-100 transition-colors group"
                 >
                   <h4 className="text-sm font-semibold text-gray-500 group-hover:text-primary mb-1">
-                    Коммерческое предложение
+                    Предложение участника
                   </h4>
                   <p className={`${styles.text.body} group-hover:text-primary`}>
                     Скачать

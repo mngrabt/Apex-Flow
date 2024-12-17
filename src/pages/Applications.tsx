@@ -48,10 +48,21 @@ export default function Applications() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">
-              Заявки поставщиков
+              Заявления на регистрацию
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {pendingApplications.length} {pendingApplications.length === 1 ? 'заявка' : 'заявок'}
+              {pendingApplications.length}{' '}
+              {(() => {
+                const count = pendingApplications.length;
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
+
+                if (count === 0) return 'заявлений';
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'заявлений';
+                if (lastDigit === 1) return 'заявление';
+                if (lastDigit >= 2 && lastDigit <= 4) return 'заявления';
+                return 'заявлений';
+              })()}
             </p>
           </div>
         </div>

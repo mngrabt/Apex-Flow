@@ -146,7 +146,7 @@ ${tender.winnerReason ? `\nПричина выбора победителя: ${t
 Председатель закупочной комиссии <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000005')}</span> У.А. Умаров</div>
 
 <div class="signature-container">
-Продакшн менеджер               <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span> А.Гани</div>
+Продакшен менеджер               <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span> А.Гани</div>
 
 <div class="signature-container">
 Член закупочной комиссии        <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000003')}</span> Ф.А. Бабаджанов</div>

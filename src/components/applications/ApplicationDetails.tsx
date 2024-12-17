@@ -131,7 +131,7 @@ export default function ApplicationDetails() {
         <div className="px-3 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary">
           <span className="flex items-center gap-1.5">
             <Building2 className="w-4 h-4" />
-            Заявление поставщика
+            Документы заявителя
           </span>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function ApplicationDetails() {
                        disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckCircle2 className="w-5 h-5" />
-              Одобрить заявку
+              Подтвердить регистрацию
             </button>
             <button
               onClick={() => setIsRejectModalOpen(true)}
@@ -162,7 +162,7 @@ export default function ApplicationDetails() {
                        disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <XCircle className="w-5 h-5" />
-              Отклонить заявку
+              Отклонить регистрацию
             </button>
           </div>
         </div>
@@ -171,11 +171,11 @@ export default function ApplicationDetails() {
         <div className="space-y-8">
           {/* Company Information */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Информация о компании</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Данные организации</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Название компании</div>
+                  <div className="text-sm text-gray-500 mb-1">Название организации</div>
                   <div className="font-medium text-gray-900">{application.companyName}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -205,7 +205,7 @@ export default function ApplicationDetails() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                  <div className="text-sm text-gray-500 mb-1">Представитель</div>
                   <div className="font-medium text-gray-900">{application.contactPerson}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -263,7 +263,7 @@ export default function ApplicationDetails() {
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 className="w-5 h-5" />
-                Одобрить заявку
+                Подтвердить регистрацию
               </button>
               <button
                 onClick={() => setIsRejectModalOpen(true)}
@@ -274,7 +274,7 @@ export default function ApplicationDetails() {
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <XCircle className="w-5 h-5" />
-                Отклонить заявку
+                Отклонить регистрацию
               </button>
             </div>
           </div>
@@ -325,10 +325,10 @@ export default function ApplicationDetails() {
               <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">
-                    Отклонить заявку
+                    Отклонить регистрацию
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    Укажите причину отклонения заявки
+                    Укажите причину отклонения регистрации
                   </p>
                 </div>
                 <button

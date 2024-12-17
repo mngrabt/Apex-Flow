@@ -174,7 +174,7 @@ export default function EditSupplierForm({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-gray-700">
-                      Контактное лицо
+                      Представитель
                     </label>
                     <input
                       type="text"

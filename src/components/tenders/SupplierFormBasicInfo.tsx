@@ -100,7 +100,7 @@ export default function SupplierFormBasicInfo({
 
       <InputField
         id="contactPerson"
-        label="Контактное лицо"
+        label="Представитель"
         value={contactPerson}
         onChange={(e) => onChange('contactPerson', e.target.value)}
         placeholder="Введите ФИО контактного лица"

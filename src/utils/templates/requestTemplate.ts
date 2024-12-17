@@ -91,7 +91,7 @@ export function generateRequestTemplate(request: Request): string {
     <div style="display: flex; justify-content: space-between; margin: 10px 0;">
         <div style="width: 45%;">
             Наименование подразделения/должности инициатора:<br>
-            <span style="border-bottom: 1px solid black;">Отдел маркетинга / Продакшн менеджер</span>
+            <span style="border-bottom: 1px solid black;">Отдел маркетинга / Продакшен менеджер</span>
         </div>
         <div style="width: 45%; text-align: right;">
             Отделу закупок и снабжения<br>
@@ -132,7 +132,7 @@ export function generateRequestTemplate(request: Request): string {
     </div>
 
     <div class="signature-container">
-        Продакшн менеджер <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span> А.Гани
+        Продакшен менеджер <span class="signature-line">${getSignatureHtml('00000000-0000-0000-0000-000000000001')}</span> А.Гани
     </div>
 </body>
 </html>`;

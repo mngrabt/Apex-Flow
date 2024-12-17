@@ -178,11 +178,11 @@ export default function SupplierDetails() {
         <div className="space-y-8">
           {/* Company Information */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Информация о компании</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Данные организации</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Название компании</div>
+                  <div className="text-sm text-gray-500 mb-1">Название организации</div>
                   <div className="font-medium text-gray-900">{supplier.name || '-'}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -212,7 +212,7 @@ export default function SupplierDetails() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <div className="text-sm text-gray-500 mb-1">Контактное лицо</div>
+                  <div className="text-sm text-gray-500 mb-1">Представитель</div>
                   <div className="font-medium text-gray-900">{supplier.contactPerson || '-'}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -275,7 +275,7 @@ export default function SupplierDetails() {
                   </div>
                   <div className="flex-1 text-left">
                     <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
-                      Сертификат ��ДС
+                      Сертификат НДС
                     </h4>
                     <p className="text-sm text-gray-500 group-hover:text-primary/80 transition-colors">
                       Скачать документ

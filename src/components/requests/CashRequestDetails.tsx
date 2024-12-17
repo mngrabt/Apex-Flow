@@ -22,7 +22,7 @@ const REQUIRED_SIGNERS = [
   },
   {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'Продакшн Менеджер',
+    role: 'Продакшен Менеджер',
     name: 'Абдурауф'
   }
 ];
@@ -277,7 +277,7 @@ export default function CashRequestDetails({ backState }: CashRequestDetailsProp
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="col-span-2 bg-gray-50 rounded-xl p-4">
                   <div className="text-sm text-gray-500 mb-1">Общая сумма</div>
                   <div className="font-medium text-gray-900">
                     {requestItems?.[0]?.totalSum?.toLocaleString()} сум
@@ -359,7 +359,7 @@ export default function CashRequestDetails({ backState }: CashRequestDetailsProp
                             </div>
                           ) : (
                             <div className="text-sm text-gray-400">
-                              Ожидает подписи
+                              На рассмотрении
                             </div>
                           )}
                         </div>
@@ -384,7 +384,7 @@ export default function CashRequestDetails({ backState }: CashRequestDetailsProp
                   `}
                 >
                   <User2 className="w-4 h-4" />
-                  {isSigningId === protocolData.id ? 'Подписание...' : 'Подписать заявку'}
+                  {isSigningId === protocolData.id ? 'Подписание...' : 'Подписать документ'}
                 </button>
               )}
             </div>

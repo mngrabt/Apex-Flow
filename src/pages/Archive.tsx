@@ -97,7 +97,18 @@ export default function Archive() {
               Архив
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {archivedProtocols.length} {archivedProtocols.length === 1 ? 'протокол' : 'протоколов'}
+              {archivedProtocols.length}{' '}
+              {(() => {
+                const count = archivedProtocols.length;
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
+
+                if (count === 0) return 'протоколов';
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'протоколов';
+                if (lastDigit === 1) return 'протокол';
+                if (lastDigit >= 2 && lastDigit <= 4) return 'протокола';
+                return 'протоколов';
+              })()}
             </p>
           </div>
         </div>

@@ -165,7 +165,7 @@ export default function ArchiveListItem({
 }: ArchiveListItemProps) {
   const [isNumberModalOpen, setIsNumberModalOpen] = useState(false);
   const [localNumber, setLocalNumber] = useState(protocol.number);
-  const { downloadArchive } = useArchiveStore();
+  const { downloadArchive, updateProtocolNumber } = useArchiveStore();
   const user = useAuthStore(state => state.user);
 
   // Check if user can edit protocol numbers (only Abdurauf and Dinara)
@@ -192,16 +192,13 @@ export default function ArchiveListItem({
     // Double check permission before submitting
     if (!canEditProtocolNumber) return;
 
-    const { error } = await supabase
-      .from('archived_protocols')
-      .update({ number })
-      .eq('protocol_id', protocol.id);
-
-    if (error) {
+    try {
+      await updateProtocolNumber(protocol.id, number);
+      setLocalNumber(number);
+    } catch (error) {
+      console.error('Error updating protocol number:', error);
       throw error;
     }
-
-    setLocalNumber(number);
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -237,7 +234,7 @@ export default function ArchiveListItem({
       default:
         return {
           icon: <AlertTriangle className="w-3.5 h-3.5 mr-1" />,
-          text: 'Не отправлен',
+          text: 'Ожидает отправки',
           className: 'bg-gray-100 text-gray-600'
         };
     }
@@ -278,7 +275,7 @@ export default function ArchiveListItem({
           </div>
 
           {/* Info Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 max-[1249px]:grid-cols-1 gap-4">
             <InfoBlock
               label="Номер"
               value={localNumber || 'Не указан'}

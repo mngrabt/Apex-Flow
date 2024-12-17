@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION send_telegram_notification(
     p_message TEXT
 ) RETURNS BOOLEAN AS $$
 DECLARE
-    v_url TEXT := 'https://api.telegram.org/bot7832369613:AAGiV_Ct8Kd6MS6C-2WpRT6pJrawHetIw_U/sendMessage';
+    v_url TEXT := 'https://api.telegram.org/bot7832369613:AAFr_slHVkZ-Dx8Th_IX0GehbnFutE_CHmk/sendMessage';
     v_response JSONB;
     v_chat_id TEXT;
 BEGIN

@@ -29,7 +29,7 @@ export async function notifyMatchingSuppliers(
 
     // Send notifications to matching suppliers
     const notificationPromises = matchingSuppliers.map(supplier => {
-      const message = `🔔 Новый тендер по вашей категории!\n\nНаименование: ${tenderName}\n\nВойдите в систему, чтобы принять участие в тендере.`;
+      const message = `Новый тендер по вашей категории!\n\nНаименование: ${tenderName}`;
       return sendTelegramMessage(supplier.telegram_chat_id!.toString(), message)
         .catch(error => {
           console.error(`Failed to send notification to supplier ${supplier.id}:`, error);

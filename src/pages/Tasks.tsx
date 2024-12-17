@@ -75,7 +75,18 @@ export default function Tasks() {
               Задачи
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {activeTasks.length} {activeTasks.length === 1 ? 'задача' : 'задач'}
+              {activeTasks.length}{' '}
+              {(() => {
+                const count = activeTasks.length;
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
+
+                if (count === 0) return 'задач';
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) return 'задач';
+                if (lastDigit === 1) return 'задача';
+                if (lastDigit >= 2 && lastDigit <= 4) return 'задачи';
+                return 'задач';
+              })()}
             </p>
           </div>
         </div>

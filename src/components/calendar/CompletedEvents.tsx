@@ -25,6 +25,8 @@ export default function CompletedEvents({ events }: CompletedEventsProps) {
   if (events.length === 0) return null;
 
   const isAbdurauf = user?.id === '00000000-0000-0000-0000-000000000001';
+  const isUmar = user?.id === '00000000-0000-0000-0000-000000000007';
+  const canViewArchive = isAbdurauf || isUmar;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100">
@@ -43,7 +45,7 @@ export default function CompletedEvents({ events }: CompletedEventsProps) {
               </p>
             </div>
           </div>
-          {isAbdurauf && (
+          {canViewArchive && (
             <button
               onClick={() => navigate('/archive')}
               className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary text-sm 

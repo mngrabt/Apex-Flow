@@ -48,9 +48,9 @@ export default function ProtocolListItem({
         </div>
 
         {/* Info Blocks */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 max-[1249px]:grid-cols-1 gap-4">
           <InfoBlock
-            label="Дата создания"
+            label="Создан"
             value={format(new Date(protocol.createdAt), 'dd.MM.yy')}
           />
           <InfoBlock
