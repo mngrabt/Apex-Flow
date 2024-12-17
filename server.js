@@ -198,12 +198,25 @@ async function startPolling() {
   isPolling = true;
   console.log('[BOT] Starting polling...');
 
+  // First, try to delete webhook to ensure we're the only instance
+  try {
+    const deleteWebhookResult = await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
+    console.log('[BOT] Deleted webhook:', deleteWebhookResult);
+  } catch (error) {
+    console.error('[BOT] Error deleting webhook:', error);
+  }
+
+  let consecutiveErrors = 0;
+  const MAX_CONSECUTIVE_ERRORS = 5;
+  const RECOVERY_DELAY = 5000; // 5 seconds
+
   while (isPolling) {
     try {
       console.log('[BOT] Polling for updates, offset:', offset);
       const data = await makeRequest(`${TELEGRAM_API}/getUpdates?offset=${offset}&timeout=30`);
 
       if (data.ok) {
+        consecutiveErrors = 0; // Reset error counter on success
         const updates = data.result;
         if (updates.length > 0) {
           console.log(`[BOT] Received ${updates.length} updates`);
@@ -219,11 +232,40 @@ async function startPolling() {
         }
       } else {
         console.error('[BOT] GetUpdates error:', data);
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait before retrying
+        
+        if (data.error_code === 409) {
+          console.log('[BOT] Conflict detected, attempting to recover...');
+          // On conflict, try to delete webhook and wait before retrying
+          await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
+          await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
+        }
+        
+        consecutiveErrors++;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.error(`[BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+          isPolling = false;
+          // Wait and restart polling
+          setTimeout(() => {
+            isPolling = false;
+            startPolling();
+          }, RECOVERY_DELAY);
+          break;
+        }
       }
     } catch (error) {
       console.error('[BOT] Polling error:', error);
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait before retrying
+      consecutiveErrors++;
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        console.error(`[BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+        isPolling = false;
+        // Wait and restart polling
+        setTimeout(() => {
+          isPolling = false;
+          startPolling();
+        }, RECOVERY_DELAY);
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
     }
   }
 }
