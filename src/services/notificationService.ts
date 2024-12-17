@@ -122,14 +122,14 @@ function getNotificationRecipients(type: NotificationType, options?: any): strin
 function generateNotificationMessage(type: NotificationType, data: any): string {
   switch (type) {
     case 'REQUEST_NEEDS_SIGNATURE':
-      return `Заявка «${data.name}» ожидает вашей подписи`;
+      return `Заявка «${data.name}» ожидает вашей подписи\n\nhttps://apexflow.uz/requests`;
     
     case 'PROTOCOL_NEEDS_SIGNATURE':
-      return `Протокол «${data.name}» ожидает вашей подписи`;
+      return `Протокол «${data.name}» ожидает вашей подписи\n\nhttps://apexflow.uz/protocols`;
     
     case 'NEW_TENDER':
       console.log('Generating NEW_TENDER notification with data:', data);
-      return `Открыт новый тендер «${data.name}»`;
+      return `Открыт новый тендер «${data.name}»\n\nhttps://apexflow.uz/tenders`;
     
     case 'TENDER_WINNER_SELECTED':
       return `В тендере «${data.tenderName}» определены победители:\nОсновной победитель: ${data.winnerName}${data.reserveName ? `\nРезервный победитель: ${data.reserveName}` : ''}`;
@@ -178,8 +178,8 @@ function generateNotificationMessage(type: NotificationType, data: any): string 
     
     case 'PROTOCOL_NUMBER_NEEDED':
       return data.type === 'cash' 
-        ? `Заявка на наличный расчет «${data.name}» ожидает присвоения номера`
-        : `Протокол «${data.name}» ожидает присвоения номера`;
+        ? `Заявка на наличный расчет «${data.name}» ожидает присвоения номера\n\nhttps://apexflow.uz/archive`
+        : `Протокол «${data.name}» ожидает присвоения номера\n\nhttps://apexflow.uz/archive`;
     
     default:
       return '';
