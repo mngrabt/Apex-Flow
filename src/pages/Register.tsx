@@ -309,7 +309,7 @@ export default function Register() {
       return false;
     }
     if (formData.password.length < 8) {
-      setError('П��роль должен содержать минимум 8 символов');
+      setError('Пароль должен содержать минимум 8 символов');
       return false;
     }
     return true;
@@ -323,7 +323,7 @@ export default function Register() {
     
     // Add phone number length validation
     if (formData.phoneNumber.replace(/\D/g, '').length !== 9) {
-      setError('Номер телефона должен содер��ать 9 цифр');
+      setError('Номер телефона должен содержать 9 цифр');
       return false;
     }
 
@@ -640,7 +640,7 @@ export default function Register() {
                   Заявка успешно отправлена!
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Ваша заявка на регистрацию принята. После пр��верки документов мы отправим вам уведомление в Telegram.
+                  Ваша заявка на регистрацию принята. После проверки документов мы отправим вам уведомление в Telegram.
                 </p>
                 <div className="text-sm text-gray-500">
                   Вы будете перенаправлены на страницу входа через {countdown} {countdown === 1 ? 'секунду' : 'секунд'}
@@ -886,7 +886,7 @@ export default function Register() {
                               <div className="max-h-60 overflow-y-auto">
                                 {filteredCategories.length === 0 ? (
                                   <div className="px-4 py-3 text-sm text-gray-500">
-                                    ��ичего не найдено
+                                    Ничего не найдено
                                   </div>
                                 ) : (
                                   filteredCategories.map(category => (
@@ -1181,7 +1181,7 @@ export default function Register() {
                               3
                             </span>
                             <span>
-                              Нажмите кнопку "Поделиться контактом" и разре��ите боту доступ к вашему номеру телефона
+                              Нажмите кнопку "Поделиться контактом" и разрешите боту доступ к вашему номеру телефона
                             </span>
                           </li>
                           <li className="flex items-start gap-2">

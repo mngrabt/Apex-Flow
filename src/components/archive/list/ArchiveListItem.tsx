@@ -10,9 +10,10 @@ interface InfoBlockProps {
   label: string;
   value: string;
   onClick?: (e: React.MouseEvent) => void;
+  isDownload?: boolean;
 }
 
-const InfoBlock = ({ label, value, onClick }: InfoBlockProps) => {
+const InfoBlock = ({ label, value, onClick, isDownload }: InfoBlockProps) => {
   const Component = onClick ? 'button' : 'div';
   const user = useAuthStore(state => state.user);
   const isDinara = user?.id === '00000000-0000-0000-0000-000000000006';
@@ -22,7 +23,7 @@ const InfoBlock = ({ label, value, onClick }: InfoBlockProps) => {
       onClick={onClick}
       className={`
         bg-gray-50 rounded-2xl p-4 text-center
-        ${onClick ? 'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-200' : ''}
+        ${onClick ? (isDownload ? 'hover:bg-orange-100 active:bg-orange-200' : 'hover:bg-gray-100 active:bg-gray-200') + ' transition-colors duration-200' : ''}
         ${isNoNumber ? 'animate-pulse-orange' : ''}
       `}
     >
@@ -285,6 +286,7 @@ export default function ArchiveListItem({
               label="Документы"
               value="Скачать"
               onClick={handleDownload}
+              isDownload={true}
             />
             <InfoBlock
               label="Создан"

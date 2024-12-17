@@ -14,12 +14,13 @@ interface InfoBlockProps {
 
 const InfoBlock = ({ label, value, onClick }: InfoBlockProps) => {
   const Component = onClick ? 'button' : 'div';
+  const isDownload = label === 'Документы' && value === 'Скачать';
   return (
     <Component
       onClick={onClick}
       className={`
         bg-gray-50 rounded-2xl p-4 text-center
-        ${onClick ? 'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-200' : ''}
+        ${onClick ? (isDownload ? 'hover:bg-orange-100 active:bg-orange-200' : 'hover:bg-gray-100 active:bg-gray-200') + ' transition-colors duration-200' : ''}
       `}
     >
       <div className="text-sm font-medium text-gray-900">{value}</div>
