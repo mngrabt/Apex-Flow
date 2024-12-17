@@ -83,10 +83,10 @@ function makeRequest(url, options = {}) {
   });
 }
 
-async function sendTelegramMessage(chatId, text, options = {}) {
-  console.log('[SUPPORT BOT] Sending message to chat ID:', chatId, 'Text:', text);
+async function sendTelegramMessage(chatId, text, apiUrl, options = {}) {
+  console.log(`[BOT] Sending message to chat ID: ${chatId}, Text: ${text}`);
   try {
-    const data = await makeRequest(`${SUPPORT_TELEGRAM_API}/sendMessage`, {
+    const data = await makeRequest(`${apiUrl}/sendMessage`, {
       method: 'POST',
       body: JSON.stringify({
         chat_id: chatId,
@@ -102,12 +102,12 @@ async function sendTelegramMessage(chatId, text, options = {}) {
 
     return data;
   } catch (error) {
-    console.error('[SUPPORT BOT] Error sending message:', error);
+    console.error('[BOT] Error sending message:', error);
     throw error;
   }
 }
 
-async function handleBotCommand(update) {
+async function handleSupportBotCommand(update) {
   console.log('[SUPPORT BOT] Processing update:', JSON.stringify(update, null, 2));
   
   const message = update.message;
@@ -125,7 +125,7 @@ async function handleBotCommand(update) {
   // Handle /start command (only for non-admin users)
   if (message.text === '/start' && !isFromAdmin) {
     console.log('[SUPPORT BOT] Handling /start command');
-    await sendTelegramMessage(chatId, WELCOME_MESSAGE);
+    await sendTelegramMessage(chatId, WELCOME_MESSAGE, SUPPORT_TELEGRAM_API);
     return;
   }
 
@@ -138,11 +138,11 @@ async function handleBotCommand(update) {
     if (userIdMatch) {
       const userId = userIdMatch[1];
       // Forward admin's reply to the user
-      await sendTelegramMessage(userId, `${message.text}`);
+      await sendTelegramMessage(userId, `${message.text}`, SUPPORT_TELEGRAM_API);
       // Confirm to admin that message was sent
-      await sendTelegramMessage(ADMIN_CHAT_ID, 'Сообщение доставлено получателю');
+      await sendTelegramMessage(ADMIN_CHAT_ID, 'Сообщение доставлено получателю', SUPPORT_TELEGRAM_API);
     } else {
-      await sendTelegramMessage(ADMIN_CHAT_ID, 'Не получилось отправить ответ пользователю. Используйте функцию Reply к исходному сообщению.');
+      await sendTelegramMessage(ADMIN_CHAT_ID, 'Не получилось отправить ответ пользователю. Используйте функцию Reply к исходному сообщению.', SUPPORT_TELEGRAM_API);
     }
     return;
   }
@@ -150,7 +150,7 @@ async function handleBotCommand(update) {
   // Handle regular messages from users (excluding admin)
   if (message.text && !isFromAdmin) {
     // Send acknowledgment to user
-    await sendTelegramMessage(chatId, 'Мы получили ваше обращение и уже работаем над ним. Специалист поддержки свяжется с вами в ближайшее время.');
+    await sendTelegramMessage(chatId, 'Мы получили ваше обращение и уже работаем над ним. Специалист поддержки свяжется с вами в ближайшее время.', SUPPORT_TELEGRAM_API);
     
     // Forward to admin with user info
     const userInfo = [
@@ -160,8 +160,31 @@ async function handleBotCommand(update) {
     ].filter(Boolean).join('\n');
 
     const adminMessage = `Поступило обращение в поддержку\n\n${userInfo}\n\nТекст обращения:\n${message.text}`;
-    await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage);
+    await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage, SUPPORT_TELEGRAM_API);
   }
+}
+
+async function handleApexBotCommand(update) {
+  console.log('[APEX BOT] Processing update:', JSON.stringify(update, null, 2));
+  
+  const message = update.message;
+  if (!message) {
+    console.log('[APEX BOT] No message in update');
+    return;
+  }
+
+  const chatId = message.chat.id;
+  console.log('[APEX BOT] Processing message for chat ID:', chatId);
+
+  // Handle /start command
+  if (message.text === '/start') {
+    console.log('[APEX BOT] Handling /start command');
+    await sendTelegramMessage(chatId, 'Добро пожаловать в ApexFlow! Я помогу вам управлять тендерами и заявками.', APEX_TELEGRAM_API);
+    return;
+  }
+
+  // Add more ApexBot specific commands here
+  // For example: /help, /status, /tender, etc.
 }
 
 async function startSupportBotPolling() {
@@ -193,7 +216,7 @@ async function startSupportBotPolling() {
 
           for (const update of updates) {
             try {
-              await handleBotCommand(update);
+              await handleSupportBotCommand(update);
             } catch (error) {
               console.error('[SUPPORT BOT] Error handling update:', error);
             }
@@ -260,7 +283,7 @@ async function startApexBotPolling() {
 
           for (const update of updates) {
             try {
-              await handleBotCommand(update);
+              await handleApexBotCommand(update);
             } catch (error) {
               console.error('[APEX BOT] Error handling update:', error);
             }
