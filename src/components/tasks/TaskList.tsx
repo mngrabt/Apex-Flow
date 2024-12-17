@@ -103,9 +103,10 @@ export default function TaskList({ tasks, onDelete }: TaskListProps) {
                   <div className="text-xs text-gray-500 group-hover:text-primary/70 transition-colors">Документация</div>
                 </button>
               ) : (
-                <div className="bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[5rem]">
-                  <div className="text-sm font-medium text-gray-900 mb-1">
-                    ТЗ отсутствует
+                <div className="bg-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[5rem] opacity-50">
+                  <div className="flex items-center justify-center gap-2 text-sm font-medium text-gray-900 mb-1">
+                    <FileText className="w-4 h-4" />
+                    Нет файла
                   </div>
                   <div className="text-xs text-gray-500">Документация</div>
                 </div>

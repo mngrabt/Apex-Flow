@@ -6,6 +6,19 @@ import { Request, Tender } from '../../types';
 import { AlertTriangle, X, FileText, GalleryVerticalEnd } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 
+// Add keyframes for orange pulse animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse-orange {
+    0%, 100% { background-color: rgb(249 115 22 / 0.1); }
+    50% { background-color: rgb(249 115 22 / 0.2); }
+  }
+  .animate-pulse-orange {
+    animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+`;
+document.head.appendChild(style);
+
 interface TenderListProps {
   tenders: Tender[];
 }
@@ -119,15 +132,15 @@ export default function TenderList({ tenders }: TenderListProps) {
                   </div>
                   <div className="text-xs text-gray-500 mt-1">Участников тендера</div>
                 </div>
-                <div className="bg-gray-50 rounded-2xl p-4 text-center">
-                <div className={`text-sm font-medium ${daysLeft === 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                  {daysLeft}{' '}
-                  {(() => {
-                    if (daysLeft === 1) return 'день';
-                    if (daysLeft >= 2 && daysLeft <= 4) return 'дня';
-                    return 'дней';
-                  })()}
-                </div>
+                <div className={`rounded-2xl p-4 text-center ${daysLeft <= 2 ? 'animate-pulse-orange' : 'bg-gray-50'}`}>
+                  <div className={`text-sm font-medium ${daysLeft === 0 ? 'text-red-500' : daysLeft <= 2 ? 'text-orange-500' : 'text-gray-900'}`}>
+                    {daysLeft}{' '}
+                    {(() => {
+                      if (daysLeft === 1) return 'день';
+                      if (daysLeft >= 2 && daysLeft <= 4) return 'дня';
+                      return 'дней';
+                    })()}
+                  </div>
                   <div className="text-xs text-gray-500 mt-1">До завершения</div>
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-4 text-center">

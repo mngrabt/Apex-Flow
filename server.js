@@ -12,15 +12,16 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 const app = express();
-const port = process.env.BOT_SERVER_PORT || 3001;
+const port = process.env.SUPPORT_BOT_PORT || 3002;
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 
 // Environment variables
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7832369613:AAFr_slHVkZ-Dx8Th_IX0GehbnFutE_CHmk';
+const BOT_TOKEN = process.env.SUPPORT_BOT_TOKEN || '7576461454:AAEtP7m6G024u2IrR82_fAC3M3QDGXnUC8c';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const ADMIN_CHAT_ID = '2041833916'; // Admin's chat ID
 
 // Create Supabase client
 const supabase = createClient(
@@ -31,6 +32,10 @@ const supabase = createClient(
 let isPolling = false;
 let offset = 0;
 let server = null;
+
+const WELCOME_MESSAGE = `Рады приветствовать вас в ApexFlow!
+
+Расскажите, с чем мы можем помочь? Наши специалисты готовы приступить к решению вашего вопроса.`;
 
 function makeRequest(url, options = {}) {
   return new Promise((resolve, reject) => {
@@ -67,7 +72,7 @@ function makeRequest(url, options = {}) {
 }
 
 async function sendTelegramMessage(chatId, text, options = {}) {
-  console.log('[BOT] Sending message to chat ID:', chatId, 'Text:', text, 'Options:', options);
+  console.log('[SUPPORT BOT] Sending message to chat ID:', chatId, 'Text:', text);
   try {
     const data = await makeRequest(`${TELEGRAM_API}/sendMessage`, {
       method: 'POST',
@@ -79,131 +84,89 @@ async function sendTelegramMessage(chatId, text, options = {}) {
       })
     });
 
-    console.log('[BOT] Send message response:', data);
-
     if (!data.ok) {
       throw new Error(data.description || 'Unknown Telegram API error');
     }
 
     return data;
   } catch (error) {
-    console.error('[BOT] Error sending message:', error);
+    console.error('[SUPPORT BOT] Error sending message:', error);
     throw error;
   }
 }
 
-async function handleContactShared(chatId, phoneNumber) {
-  console.log('[BOT] Handling contact share for chat ID:', chatId, 'Phone:', phoneNumber);
-  
-  const cleanNumber = phoneNumber.replace(/\D/g, '');
-  const formattedNumber = cleanNumber.startsWith('998') ? cleanNumber : `998${cleanNumber}`;
-
-  try {
-    console.log('[BOT] Deleting existing verifications');
-    // Delete any existing verifications
-    const { error: deleteError } = await supabase
-      .from('telegram_verifications')
-      .delete()
-      .or(`chat_id.eq.${chatId},phone_number.eq.${formattedNumber}`);
-
-    if (deleteError) {
-      console.error('[BOT] Error deleting verifications:', deleteError);
-      throw deleteError;
-    }
-
-    console.log('[BOT] Inserting new verification');
-    // Insert new verification
-    const { error: insertError } = await supabase
-      .from('telegram_verifications')
-      .insert({
-        chat_id: chatId,
-        phone_number: formattedNumber,
-        verified_at: new Date().toISOString()
-      });
-
-    if (insertError) {
-      console.error('[BOT] Error inserting verification:', insertError);
-      throw insertError;
-    }
-
-    console.log('[BOT] Sending confirmation message');
-    await sendTelegramMessage(
-      chatId,
-      'Контактные данные получены. Вернитесь в приложение для продолжения процесса регистрации.',
-      { reply_markup: { remove_keyboard: true } }
-    );
-  } catch (error) {
-    console.error('[BOT] Error in verification process:', error);
-    
-    await sendTelegramMessage(
-      chatId,
-      'Не удалось выполнить верификацию. Повторите попытку.',
-      { reply_markup: { remove_keyboard: true } }
-    );
-  }
-}
-
 async function handleBotCommand(update) {
-  console.log('[BOT] Processing update:', JSON.stringify(update, null, 2));
+  console.log('[SUPPORT BOT] Processing update:', JSON.stringify(update, null, 2));
   
   const message = update.message;
   if (!message) {
-    console.log('[BOT] No message in update');
+    console.log('[SUPPORT BOT] No message in update');
     return;
   }
 
   const chatId = message.chat.id;
-  console.log('[BOT] Processing message for chat ID:', chatId);
+  console.log('[SUPPORT BOT] Processing message for chat ID:', chatId);
 
-  // Handle /start command
-  if (message.text === '/start') {
-    console.log('[BOT] Handling /start command');
-    await sendTelegramMessage(
-      chatId,
-      'Добро пожаловать в систему ApexFlow!\n\nДля завершения регистрации нажмите кнопку «Поделиться контактом» ниже.',
-      {
-        reply_markup: {
-          keyboard: [[{
-            text: 'Поделиться контактом',
-            request_contact: true
-          }]],
-          resize_keyboard: true,
-          one_time_keyboard: true
-        }
-      }
-    );
+  // Check if message is from admin
+  const isFromAdmin = chatId.toString() === ADMIN_CHAT_ID;
+
+  // Handle /start command (only for non-admin users)
+  if (message.text === '/start' && !isFromAdmin) {
+    console.log('[SUPPORT BOT] Handling /start command');
+    await sendTelegramMessage(chatId, WELCOME_MESSAGE);
     return;
   }
 
-  // Handle contact sharing
-  if (message.contact) {
-    console.log('[BOT] Received contact:', message.contact);
-    const phoneNumber = message.contact.phone_number;
-    const userId = message.from.id;
+  // Handle messages from admin (only replies)
+  if (isFromAdmin && message.reply_to_message) {
+    // Extract user ID from the original forwarded message
+    const originalMessage = message.reply_to_message.text;
+    const userIdMatch = originalMessage.match(/ID: (\d+)/);
     
-    if (userId === message.contact.user_id) {
-      await handleContactShared(chatId, phoneNumber);
+    if (userIdMatch) {
+      const userId = userIdMatch[1];
+      // Forward admin's reply to the user
+      await sendTelegramMessage(userId, `${message.text}`);
+      // Confirm to admin that message was sent
+      await sendTelegramMessage(ADMIN_CHAT_ID, 'Сообщение доставлено получателю');
     } else {
-      console.log('[BOT] Contact share rejected - user ID mismatch');
+      await sendTelegramMessage(ADMIN_CHAT_ID, 'Не получилось отправить ответ пользователю. Используйте функцию Reply к исходному сообщению.');
     }
+    return;
+  }
+
+  // Handle regular messages from users (excluding admin)
+  if (message.text && !isFromAdmin) {
+    // Send acknowledgment to user
+    await sendTelegramMessage(chatId, 'Мы получили ваше обращение и уже работаем над ним. Специалист поддержки свяжется с вами в ближайшее время.');
+    
+    // Forward to admin with user info
+    const userInfo = [
+      `Автор: ${message.from.first_name || 'Неизвестен'}`,
+      message.from.username ? `@${message.from.username}` : null,
+      `ID: ${message.from.id}`,
+    ].filter(Boolean).join('\n');
+
+    const adminMessage = `Поступило обращение в поддержку\n\n${userInfo}\n\nТекст обращения:\n${message.text}`;
+    await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage);
   }
 }
 
 async function startPolling() {
   if (isPolling) {
-    console.log('[BOT] Already polling');
+    console.log('[SUPPORT BOT] Already polling');
     return;
   }
   
   isPolling = true;
-  console.log('[BOT] Starting polling...');
+  console.log('[SUPPORT BOT] Starting polling...');
 
   // First, try to delete webhook to ensure we're the only instance
   try {
     const deleteWebhookResult = await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
-    console.log('[BOT] Deleted webhook:', deleteWebhookResult);
+    console.log('[SUPPORT BOT] Deleted webhook:', deleteWebhookResult);
   } catch (error) {
-    console.error('[BOT] Error deleting webhook:', error);
+    console.error('[SUPPORT BOT] Error deleting webhook:', error);
   }
 
   let consecutiveErrors = 0;
@@ -212,39 +175,37 @@ async function startPolling() {
 
   while (isPolling) {
     try {
-      console.log('[BOT] Polling for updates, offset:', offset);
+      console.log('[SUPPORT BOT] Polling for updates, offset:', offset);
       const data = await makeRequest(`${TELEGRAM_API}/getUpdates?offset=${offset}&timeout=30`);
 
       if (data.ok) {
         consecutiveErrors = 0; // Reset error counter on success
         const updates = data.result;
         if (updates.length > 0) {
-          console.log(`[BOT] Received ${updates.length} updates`);
+          console.log(`[SUPPORT BOT] Received ${updates.length} updates`);
 
           for (const update of updates) {
             try {
               await handleBotCommand(update);
             } catch (error) {
-              console.error('[BOT] Error handling update:', error);
+              console.error('[SUPPORT BOT] Error handling update:', error);
             }
             offset = update.update_id + 1;
           }
         }
       } else {
-        console.error('[BOT] GetUpdates error:', data);
+        console.error('[SUPPORT BOT] GetUpdates error:', data);
         
         if (data.error_code === 409) {
-          console.log('[BOT] Conflict detected, attempting to recover...');
-          // On conflict, try to delete webhook and wait before retrying
+          console.log('[SUPPORT BOT] Conflict detected, attempting to recover...');
           await makeRequest(`${TELEGRAM_API}/deleteWebhook`);
           await new Promise(resolve => setTimeout(resolve, RECOVERY_DELAY));
         }
         
         consecutiveErrors++;
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          console.error(`[BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+          console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
           isPolling = false;
-          // Wait and restart polling
           setTimeout(() => {
             isPolling = false;
             startPolling();
@@ -253,12 +214,11 @@ async function startPolling() {
         }
       }
     } catch (error) {
-      console.error('[BOT] Polling error:', error);
+      console.error('[SUPPORT BOT] Polling error:', error);
       consecutiveErrors++;
       if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-        console.error(`[BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
+        console.error(`[SUPPORT BOT] Too many consecutive errors (${consecutiveErrors}), restarting polling...`);
         isPolling = false;
-        // Wait and restart polling
         setTimeout(() => {
           isPolling = false;
           startPolling();
@@ -272,7 +232,7 @@ async function startPolling() {
 
 // Graceful shutdown
 async function shutdown() {
-  console.log('[BOT] Shutting down...');
+  console.log('[SUPPORT BOT] Shutting down...');
   isPolling = false;
   
   if (server) {
@@ -301,9 +261,9 @@ app.get('/health', (req, res) => {
 
 // Start the server and bot
 server = app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Support bot server running on port ${port}`);
   startPolling().catch(error => {
-    console.error('[BOT] Failed to start polling:', error);
+    console.error('[SUPPORT BOT] Failed to start polling:', error);
     process.exit(1);
   });
 }); 

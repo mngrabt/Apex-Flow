@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Protocol } from '../../types';
 import { useAuthStore } from '../../store/auth';
-import { CheckCircle2, Clock, Pen, User2 } from 'lucide-react';
+import { CheckCircle2, Clock, Pen, FileSignature } from 'lucide-react';
 
 interface ProtocolSignaturesProps {
   protocol: Protocol;
@@ -134,7 +134,7 @@ export default function ProtocolSignatures({
             }
           `}
         >
-          <User2 className="w-4 h-4" />
+          <FileSignature className="w-4 h-4" />
           {isSigningId === protocol.id ? 'Подписание...' : 'Подписать документ'}
         </button>
       )}

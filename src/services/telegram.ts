@@ -91,15 +91,24 @@ export async function verifyTelegramChatId(phoneNumber: string): Promise<number 
 export function generateNotificationMessage(
   type: 'application' | 'application_approved' | 'application_rejected',
   companyName: string,
-  additionalInfo?: { reason?: string }
+  additionalInfo?: { 
+    reason?: string;
+    login?: string;
+    password?: string;
+  }
 ): string {
   switch (type) {
     case 'application':
       return `Новая заявка на регистрацию от компании "${companyName}"`;
     case 'application_approved':
-      return `Ваша заявка на регистрацию была одобрена. Вы можете войти в систему используя предоставленные учетные данные.`;
+      return `Ваша заявка на регистрацию одобрена.\n\n` +
+             `Данные для доступа в систему:\n` +
+             `Логин: ${additionalInfo?.login || 'Не указан'}\n` +
+             `Пароль: ${additionalInfo?.password || 'Не указан'}`;
     case 'application_rejected':
-      return `Ваша заявка на регистрацию была отклонена.\n\nПричина: ${additionalInfo?.reason || 'Не указана'}`;
+      return `Ваша заявка на регистрацию отклонена.${
+        additionalInfo?.reason ? `\n\nПричина: ${additionalInfo.reason}` : ''
+      }`;
     default:
       return '';
   }
