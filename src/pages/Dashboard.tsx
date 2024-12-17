@@ -449,14 +449,16 @@ export default function Dashboard() {
               <div className="lg:hidden bg-primary rounded-2xl p-6 text-white">
                 <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
                 <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
-                  <button
-                    onClick={() => navigate('/requests', { state: { openForm: true } })}
-                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                              bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span className="text-sm font-medium">Новая заявка</span>
-                  </button>
+                  {!isFozil && (
+                    <button
+                      onClick={() => navigate('/requests', { state: { openForm: true } })}
+                      className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
+                                bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span className="text-sm font-medium">Новая заявка</span>
+                    </button>
+                  )}
                   {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
                     <button
                       onClick={() => navigate('/tasks', { state: { openForm: true } })}
@@ -471,89 +473,91 @@ export default function Dashboard() {
               </div>
 
               {/* Calendar for Mobile */}
-              <div className="lg:hidden bg-white rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Календарь</h3>
-                  <button
-                    onClick={() => navigate('/calendar')}
-                    className="text-primary hover:text-primary/80 transition-colors text-sm font-medium inline-flex items-center gap-1"
-                  >
-                    Открыть календарь
-                    <ArrowUpRight className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-center mb-4">
-                  <div className="text-sm font-medium text-gray-900">
-                    {format(new Date(), 'LLLL yyyy', { locale: ru })}
+              {!isFozil && (
+                <div className="lg:hidden bg-white rounded-2xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900">Календарь</h3>
+                    <button
+                      onClick={() => navigate('/calendar')}
+                      className="text-primary hover:text-primary/80 transition-colors text-sm font-medium inline-flex items-center gap-1"
+                    >
+                      Открыть календарь
+                      <ArrowUpRight className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
-                    <div key={day} className="text-[11px] font-medium text-gray-500 text-center">
-                      {day}
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="text-sm font-medium text-gray-900">
+                      {format(new Date(), 'LLLL yyyy', { locale: ru })}
                     </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {eachDayOfInterval({
-                    start: startOfWeek(startOfToday(), { weekStartsOn: 1 }),
-                    end: endOfWeek(startOfToday(), { weekStartsOn: 1 })
-                  }).map(day => {
-                    const isCurrentMonth = isSameMonth(day, startOfToday());
-                    const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
-                    const dayEvents = events?.filter(event => isSameDay(new Date(event.date), day)) || [];
-                    const hasEvents = dayEvents.length > 0;
-
-                    return (
-                      <div
-                        key={day.toString()}
-                        onClick={() => setSelectedDate(isSelected ? null : day)}
-                        className={`
-                          relative aspect-square flex items-center justify-center rounded-lg text-sm
-                          cursor-pointer transition-all duration-200
-                          ${isToday(day) 
-                            ? 'bg-primary text-white font-medium' 
-                            : isSelected
-                              ? 'bg-primary/10 text-primary font-medium'
-                              : isCurrentMonth
-                                ? 'text-gray-900 hover:bg-gray-50'
-                                : 'text-gray-300'
-                          }
-                        `}
-                      >
-                        {format(day, 'd')}
-                        {hasEvents && !isToday(day) && !isSelected && (
-                          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Events for selected date */}
-                {selectedDate && selectedDateEvents.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <div className="text-xs font-medium text-gray-500">
-                      События на {format(selectedDate, 'd MMMM', { locale: ru })}:
-                    </div>
-                    {selectedDateEvents.map(event => (
-                      <div
-                        key={event.id}
-                        className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 
-                                 transition-colors cursor-pointer"
-                        onClick={() => navigate('/calendar')}
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-gray-900 truncate">
-                            {event.title}
-                          </div>
-                        </div>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
+                      <div key={day} className="text-[11px] font-medium text-gray-500 text-center">
+                        {day}
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {eachDayOfInterval({
+                      start: startOfWeek(startOfToday(), { weekStartsOn: 1 }),
+                      end: endOfWeek(startOfToday(), { weekStartsOn: 1 })
+                    }).map(day => {
+                      const isCurrentMonth = isSameMonth(day, startOfToday());
+                      const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
+                      const dayEvents = events?.filter(event => isSameDay(new Date(event.date), day)) || [];
+                      const hasEvents = dayEvents.length > 0;
+
+                      return (
+                        <div
+                          key={day.toString()}
+                          onClick={() => setSelectedDate(isSelected ? null : day)}
+                          className={`
+                            relative aspect-square flex items-center justify-center rounded-lg text-sm
+                            cursor-pointer transition-all duration-200
+                            ${isToday(day) 
+                              ? 'bg-primary text-white font-medium' 
+                              : isSelected
+                                ? 'bg-primary/10 text-primary font-medium'
+                                : isCurrentMonth
+                                  ? 'text-gray-900 hover:bg-gray-50'
+                                  : 'text-gray-300'
+                            }
+                          `}
+                        >
+                          {format(day, 'd')}
+                          {hasEvents && !isToday(day) && !isSelected && (
+                            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Events for selected date */}
+                  {selectedDate && selectedDateEvents.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="text-xs font-medium text-gray-500">
+                        События на {format(selectedDate, 'd MMMM', { locale: ru })}:
+                      </div>
+                      {selectedDateEvents.map(event => (
+                        <div
+                          key={event.id}
+                          className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 
+                                   transition-colors cursor-pointer"
+                          onClick={() => navigate('/calendar')}
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-gray-900 truncate">
+                              {event.title}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -622,7 +626,7 @@ export default function Dashboard() {
             )}
 
             {/* Pending Tasks - Only show if user has access */}
-            {hasTaskAccess && (
+            {hasTaskAccess && !isFozil && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-gray-900">Текущие задачи</h2>
