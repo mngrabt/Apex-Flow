@@ -1,4 +1,4 @@
--- Create a table to store our logs
+-- Create debug_logs table if it doesn't exist
 CREATE TABLE IF NOT EXISTS debug_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     function_name TEXT,
@@ -6,6 +6,29 @@ CREATE TABLE IF NOT EXISTS debug_logs (
     details JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Create a function to safely log debug information
+CREATE OR REPLACE FUNCTION safe_debug_log(
+    p_function_name TEXT,
+    p_message TEXT,
+    p_details JSONB DEFAULT NULL
+) RETURNS void AS $$
+BEGIN
+    -- Try to insert into debug_logs if the table exists
+    BEGIN
+        INSERT INTO debug_logs (function_name, message, details)
+        VALUES (p_function_name, p_message, p_details);
+    EXCEPTION WHEN undefined_table THEN
+        -- Table doesn't exist, silently continue
+        NULL;
+    END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Grant necessary permissions
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT ALL ON TABLE debug_logs TO authenticated;
+GRANT EXECUTE ON FUNCTION safe_debug_log TO authenticated;
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;

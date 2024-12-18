@@ -316,14 +316,9 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
 
           if (protocolError) throw protocolError;
 
-          // Send notification about protocol needing signature
-          await sendNotification('PROTOCOL_NEEDS_SIGNATURE', {
-            name: request.items[0]?.name || `Протокол #${protocol?.id}`,
-            protocolId: protocol?.id,
-            type: 'cash',
-            department: request.department,
-            requestNumber: request.number
-          });
+          // For cash requests, we don't need to send a signature notification
+          // since Abdurauf's signature is added automatically
+          console.log('Created cash protocol:', protocol?.id);
         } else if (request.type === 'transfer') {
           // First update request status to pending to avoid constraint violation
           const { error: updateError } = await supabase

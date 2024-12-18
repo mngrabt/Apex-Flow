@@ -1,4 +1,4 @@
--- Update protocol completion notification message
+-- Update protocol completion notification function to skip cash protocols
 CREATE OR REPLACE FUNCTION notify_protocol_completion()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -7,7 +7,7 @@ DECLARE
     v_message TEXT;
     v_existing_notification UUID;
 BEGIN
-    -- Skip if this is a cash request
+    -- Skip if this is a cash protocol
     IF NEW.type = 'cash' THEN
         RETURN NEW;
     END IF;
@@ -70,22 +70,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Update cash request completion notification message
-CREATE OR REPLACE FUNCTION notify_cash_request_completion()
+-- Drop and recreate the trigger
+DROP TRIGGER IF EXISTS notify_protocol_completion_trigger ON protocols;
+
+CREATE TRIGGER notify_protocol_completion_trigger
+    AFTER UPDATE ON protocols
+    FOR EACH ROW
+    EXECUTE FUNCTION notify_protocol_completion();
+
+-- Create separate function for cash protocol notifications
+CREATE OR REPLACE FUNCTION notify_cash_protocol_completion()
 RETURNS TRIGGER AS $$
 DECLARE
     v_request_name TEXT;
     v_chat_id TEXT;
     v_message TEXT;
-    v_existing_notification UUID;
 BEGIN
-    -- Only proceed if status changed to 'protocol'
-    IF NEW.status = 'protocol' AND (OLD.status IS NULL OR OLD.status != 'protocol') THEN
+    -- Only proceed if this is a cash protocol and it's completed
+    IF NEW.type = 'cash' AND NEW.status = 'completed' AND 
+       (OLD.status IS NULL OR OLD.status != 'completed') THEN
+        
         -- Get request name
-        SELECT name INTO v_request_name
-        FROM request_items
-        WHERE request_id = NEW.id
-        ORDER BY created_at ASC
+        SELECT ri.name INTO v_request_name
+        FROM protocols p
+        LEFT JOIN requests r ON r.id = p.request_id
+        LEFT JOIN request_items ri ON ri.request_id = r.id
+        WHERE p.id = NEW.id
         LIMIT 1;
 
         -- Get Dinara's chat ID
@@ -95,9 +105,9 @@ BEGIN
         AND telegram_chat_id IS NOT NULL;
 
         IF v_chat_id IS NOT NULL THEN
-            -- Format message with link
+            -- Format message
             v_message := format(
-                'Заявка на наличный расчет «%s» ожидает присвоения номера\n\nПерейти к архиву: https://apexflow.uz/archive?view=cash',
+                E'Заявка на наличный расчет «%s» ожидает присвоения номера\n\nПерейти к архиву: https://apexflow.uz/archive?view=cash',
                 COALESCE(v_request_name, 'Не указано')
             );
 
@@ -115,7 +125,8 @@ BEGIN
                     'name', v_request_name,
                     'message', v_message,
                     'chat_id', v_chat_id,
-                    'requestId', NEW.id
+                    'protocolId', NEW.id,
+                    'requestId', NEW.request_id
                 ),
                 NOW(),
                 false,
@@ -131,80 +142,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create or replace the trigger for cash request notifications
-DROP TRIGGER IF EXISTS notify_cash_request_completion_trigger ON requests;
-CREATE TRIGGER notify_cash_request_completion_trigger
-    AFTER UPDATE OF status ON requests
+-- Create trigger for cash protocol notifications
+DROP TRIGGER IF EXISTS notify_cash_protocol_completion_trigger ON protocols;
+
+CREATE TRIGGER notify_cash_protocol_completion_trigger
+    AFTER UPDATE ON protocols
     FOR EACH ROW
     WHEN (NEW.type = 'cash')
-    EXECUTE FUNCTION notify_cash_request_completion();
-
--- Update new tender notification message
-CREATE OR REPLACE FUNCTION notify_suppliers_of_new_tender()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_request_name TEXT;
-    v_categories TEXT[];
-    v_supplier RECORD;
-BEGIN
-    -- Get tender name from request_items
-    SELECT ri.name INTO v_request_name
-    FROM tenders t
-    LEFT JOIN requests r ON r.id = t.request_id
-    LEFT JOIN request_items ri ON ri.request_id = r.id
-    WHERE t.id = NEW.id
-    LIMIT 1;
-
-    -- Get categories
-    SELECT r.categories INTO v_categories
-    FROM tenders t
-    LEFT JOIN requests r ON r.id = t.request_id
-    WHERE t.id = NEW.id;
-
-    -- Notify matching suppliers
-    FOR v_supplier IN
-        SELECT ds.id, ds.telegram_chat_id
-        FROM database_suppliers ds
-        WHERE ds.status = 'verified'
-        AND ds.notifications_enabled = true
-        AND ds.telegram_chat_id IS NOT NULL
-        AND EXISTS (
-            SELECT 1
-            FROM unnest(ds.categories) supplier_category
-            WHERE supplier_category = ANY(v_categories)
-        )
-    LOOP
-        -- Create notification with link
-        INSERT INTO telegram_notifications (
-            type,
-            metadata,
-            created_at,
-            sent,
-            error
-        ) VALUES (
-            'NEW_TENDER',
-            jsonb_build_object(
-                'type', 'tender',
-                'name', v_request_name,
-                'message', format(
-                    '🔔 Новый тендер по вашей категории!\n\nНаименование: %s\n\nПерейти к тендеру: https://apexflow.uz/tenders/%s',
-                    COALESCE(v_request_name, 'Без названия'),
-                    NEW.id
-                ),
-                'chat_id', v_supplier.telegram_chat_id,
-                'tenderId', NEW.id,
-                'userId', v_supplier.id,
-                'categories', v_categories
-            ),
-            NOW(),
-            false,
-            NULL
-        );
-
-        -- Process notification immediately
-        PERFORM process_telegram_notifications();
-    END LOOP;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql; 
+    EXECUTE FUNCTION notify_cash_protocol_completion(); 
