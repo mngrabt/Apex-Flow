@@ -74,6 +74,20 @@ const InputField = ({
   </div>
 );
 
+const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Remove all non-digits
+  const digits = e.target.value.replace(/\D/g, '');
+  
+  // Format the number with spaces
+  let formatted = '';
+  if (digits.length > 0) formatted += digits.slice(0, 2);
+  if (digits.length > 2) formatted += ' ' + digits.slice(2, 5);
+  if (digits.length > 5) formatted += ' ' + digits.slice(5, 7);
+  if (digits.length > 7) formatted += ' ' + digits.slice(7, 9);
+  
+  onChange('contactNumber', formatted);
+};
+
 export default function SupplierFormBasicInfo({
   companyName,
   contactPerson,
@@ -113,7 +127,7 @@ export default function SupplierFormBasicInfo({
         id="contactNumber"
         label="Контактный телефон"
         value={contactNumber}
-        onChange={(e) => onChange('contactNumber', e.target.value)}
+        onChange={handlePhoneNumberChange}
         placeholder="99 123 45 67"
         disabled={disabled || isFieldReadOnly('contactNumber')}
         required

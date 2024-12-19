@@ -385,11 +385,11 @@ export default function TenderDetails() {
                       </div>
                       <div className="bg-gray-50 rounded-xl p-4">
                         <div className="text-sm text-gray-500 mb-1">Цена за единицу</div>
-                        <div className="font-medium text-gray-900">{supplier.pricePerUnit.toLocaleString()} сум</div>
+                        <div className="font-medium text-gray-900">{Number(supplier.pricePerUnit).toLocaleString('ru-RU')} сум</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-4">
                         <div className="text-sm text-gray-500 mb-1">Общая сумма</div>
-                        <div className="font-medium text-gray-900">{supplier.price.toLocaleString()} сум</div>
+                        <div className="font-medium text-gray-900">{Number(supplier.price).toLocaleString('ru-RU')} сум</div>
                       </div>
                     </div>
 

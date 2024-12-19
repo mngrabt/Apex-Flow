@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { supabase } from '../lib/supabase';
-import { Eye, EyeOff, ArrowLeft, HelpCircle, Upload, Trash2, Check, ChevronDown, X, Download } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, HelpCircle, Upload, Trash2, Check, ChevronDown, X, Download, CheckCircle } from 'lucide-react';
 import { styles } from '../utils/styleConstants';
 import { verifyTelegramChatId } from '../services/telegram';
 import { setupWebhook } from '../services/telegramWebhook';
 import { sendNotification } from '../services/notificationService';
+import debounce from 'lodash/debounce';
 
 // Categories for selection
 const CATEGORIES = [
@@ -86,6 +87,8 @@ export default function Register() {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [hasDownloadedForm, setHasDownloadedForm] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -109,6 +112,74 @@ export default function Register() {
     category.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
+  const checkUsername = async (username: string) => {
+    if (!username) {
+      setIsUsernameValid(false);
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    try {
+      // Check both users table and supplier_applications table
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .maybeSingle();
+
+      if (userError) {
+        console.error('Error checking username in users table:', userError);
+        setError('Произошла ошибка при проверке имени пользователя');
+        setIsUsernameValid(false);
+        return;
+      }
+
+      // If username exists in users table
+      if (existingUser) {
+        setError('Это имя пользователя уже занято');
+        setIsUsernameValid(false);
+        return;
+      }
+
+      // Also check supplier_applications table for pending applications
+      const { data: existingApplication, error: applicationError } = await supabase
+        .from('supplier_applications')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .maybeSingle();
+
+      if (applicationError) {
+        console.error('Error checking username in applications:', applicationError);
+        setError('Произошла ошибка при проверке имени пользователя');
+        setIsUsernameValid(false);
+        return;
+      }
+
+      // If username exists in pending applications
+      if (existingApplication) {
+        setError('Это имя пользователя уже занято');
+        setIsUsernameValid(false);
+        return;
+      }
+
+      // If username doesn't exist in either table
+      setError(null);
+      setIsUsernameValid(true);
+
+    } catch (error) {
+      console.error('Error checking username:', error);
+      setIsUsernameValid(false);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  // Debounce the username check to avoid too many API calls
+  const debouncedCheckUsername = useCallback(
+    debounce((username: string) => checkUsername(username), 500),
+    []
+  );
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
@@ -119,7 +190,26 @@ export default function Register() {
         [name]: checked,
         telegramNumber: checked ? prev.phoneNumber : prev.telegramNumber 
       }));
-    } else if (name === 'phoneNumber') {
+      return;
+    }
+    
+    // Special handling for username: only latin letters and numbers, no spaces
+    if (name === 'username') {
+      const latinOnly = value.toLowerCase().replace(/[^a-z0-9]/g, '');
+      setFormData(prev => ({ ...prev, [name]: latinOnly }));
+      debouncedCheckUsername(latinOnly);
+      return;
+    }
+    
+    // Special handling for password: no spaces
+    if (name === 'password' || name === 'confirmPassword') {
+      const noSpaces = value.replace(/\s/g, '');
+      setFormData(prev => ({ ...prev, [name]: noSpaces }));
+      return;
+    }
+    
+    // Phone number formatting
+    if (name === 'phoneNumber') {
       // Remove any non-digits
       let digitsOnly = value.replace(/\D/g, '');
       
@@ -131,7 +221,11 @@ export default function Register() {
       if (digitsOnly.length > 7) formatted += ' ' + digitsOnly.slice(7, 9);
 
       setFormData(prev => ({ ...prev, [name]: formatted }));
-    } else if (name === 'inn') {
+      return;
+    }
+    
+    // INN formatting
+    if (name === 'inn') {
       // Only allow digits and limit to 9 characters
       const digitsOnly = value.replace(/\D/g, '').slice(0, 9);
       
@@ -142,9 +236,10 @@ export default function Register() {
       if (digitsOnly.length > 6) formatted += ' ' + digitsOnly.slice(6, 9);
       
       setFormData(prev => ({ ...prev, [name]: formatted }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      return;
     }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
   };
 
@@ -198,7 +293,7 @@ export default function Register() {
 
       console.log('[SUBMIT] Creating supplier application:', formData);
 
-      // Create the supplier application
+      // Create only the supplier application
       const { data, error } = await supabase
         .from('supplier_applications')
         .insert({
@@ -283,7 +378,7 @@ export default function Register() {
         ]
       });
 
-      // Show success message
+      // Show success message with modified text
       setIsSuccess(true);
       
       // Redirect after a delay
@@ -304,14 +399,35 @@ export default function Register() {
       setError('Пожалуйста, заполните все поля');
       return false;
     }
+    
+    // Check username is only latin letters and numbers
+    if (!/^[a-z0-9]+$/.test(formData.username)) {
+      setError('Имя пользователя может содержать только латинские буквы и цифры');
+      return false;
+    }
+
+    // Check if username is valid (already checked in real-time)
+    if (!isUsernameValid) {
+      setError('Пожалуйста, выберите другое имя пользователя');
+      return false;
+    }
+
+    // Check password has no spaces
+    if (formData.password.includes(' ') || formData.confirmPassword.includes(' ')) {
+      setError('Пароль не может содержать пробелы');
+      return false;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
       return false;
     }
+    
     if (formData.password.length < 8) {
       setError('Пароль должен содержать минимум 8 символов');
       return false;
     }
+    
     return true;
   };
 
@@ -359,8 +475,11 @@ export default function Register() {
   };
 
   const handleNext = async () => {
-    if (step === 1 && validateStep1()) {
-      setStep(2);
+    if (step === 1) {
+      const isValid = await validateStep1();
+      if (isValid) {
+        setStep(2);
+      }
     } else if (step === 2 && validateStep2()) {
       setStep(3);
     } else if (step === 3 && validateStep3()) {
@@ -631,19 +750,22 @@ export default function Register() {
 
           {/* Form Content */}
           {isSuccess ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="w-full bg-primary/5 rounded-2xl p-8">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Check className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Заявка успешно отправлена!
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Ваша заявка на регистрацию принята. После проверки документов мы отправим вам уведомление в Telegram.
-                </p>
-                <div className="text-sm text-gray-500">
-                  Вы будете перенаправлены на страницу входа через {countdown} {countdown === 1 ? 'секунду' : 'секунд'}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
+              <div className="relative bg-white rounded-2xl p-8 max-w-md w-full shadow-xl">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Заявка успешно отправлена
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Ваша заявка на регистрацию отправлена на рассмотрение. После проверки и одобрения администратором, вы получите уведомление в Telegram с данными для входа в систему.
+                  </p>
+                  <div className="text-sm text-gray-500">
+                    Перенаправление на страницу входа через {Math.ceil(redirectCountdown / 1000)} сек...
+                  </div>
                 </div>
               </div>
             </div>
@@ -702,15 +824,36 @@ export default function Register() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Имя пользователя
                         </label>
-                        <input
-                          type="text"
-                          name="username"
-                          value={formData.username}
-                          onChange={handleInputChange}
-                          className={styles.input}
-                          placeholder="Введите имя пользователя"
-                          required
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleInputChange}
+                            className={`${styles.input} ${
+                              formData.username && (
+                                isCheckingUsername 
+                                  ? 'border-yellow-300' 
+                                  : isUsernameValid 
+                                    ? 'border-primary' 
+                                    : 'border-red-500'
+                              )
+                            }`}
+                            placeholder="Введите имя пользователя"
+                            required
+                          />
+                          {formData.username && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              {isCheckingUsername ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                              ) : isUsernameValid ? (
+                                <Check className="w-5 h-5 text-primary" />
+                              ) : (
+                                <X className="w-5 h-5 text-red-500" />
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div>
@@ -1022,9 +1165,9 @@ export default function Register() {
 
                       {/* Document Upload Fields */}
                       {[
-                        ...(formData.isVatPayer ? [{ name: 'vatCertificate' as const, label: 'Свидетельство о постановке на учет в налоговом органе' }] : []),
-                        { name: 'license' as const, label: 'Лицензия' },
-                        { name: 'passport' as const, label: 'Паспорт руководителя' },
+                        ...(formData.isVatPayer ? [{ name: 'vatCertificate' as const, label: 'Свидетельство НДС' }] : []),
+                        { name: 'license' as const, label: 'Гувохнома' },
+                        { name: 'passport' as const, label: 'Паспорт директора' },
                         { name: 'form' as const, label: 'Анкета' }
                       ].map(({ name, label }) => (
                         <div key={name} className="space-y-2">

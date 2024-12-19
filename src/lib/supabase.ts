@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
@@ -16,30 +16,41 @@ const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storageKey: 'supabase.auth.token'
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'procurement-management-system',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+// Create Supabase client with different configs for dev and prod
+const createSupabaseClient = () => {
+  const config = {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storageKey: 'supabase.auth.token'
+    },
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'procurement-management-system',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+      }
     }
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
+  };
+
+  // Only enable realtime features in production
+  if (process.env.NODE_ENV === 'production') {
+    config.realtime = {
+      params: {
+        eventsPerSecond: 10
+      }
+    };
   }
-});
+
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, config);
+};
+
+export const supabase = createSupabaseClient();
 
 // Test immediate connection
 const testConnection = async () => {
@@ -109,6 +120,15 @@ export const checkConnection = async (timeout = 5000) => {
     const end = Date.now();
     
     if (error) {
+      // In development, 401 errors are expected before login
+      if (error.code === '401' && process.env.NODE_ENV === 'development') {
+        return {
+          status: 'connected',
+          latency: end - start,
+          error: null
+        };
+      }
+
       console.error('Supabase connection error:', {
         error,
         url: supabaseUrl,
@@ -141,14 +161,16 @@ export const checkConnection = async (timeout = 5000) => {
 };
 
 // Initialize connection check
-checkConnection()
-  .then(status => {
-    if (status.status === 'connected') {
-      console.log(`Supabase connected successfully. Latency: ${status.latency}ms`);
-    } else {
-      console.error('Supabase connection failed:', status.error);
-    }
-  });
+if (process.env.NODE_ENV === 'production') {
+  checkConnection()
+    .then(status => {
+      if (status.status === 'connected') {
+        console.log(`Supabase connected successfully. Latency: ${status.latency}ms`);
+      } else {
+        console.error('Supabase connection failed:', status.error);
+      }
+    });
+}
 
 // Error handling
 supabase.handleError = (error: any) => {

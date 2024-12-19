@@ -236,7 +236,7 @@ export default function Sidebar({ isOpen, onClose, isDesktop }: SidebarProps) {
       title: 'Управление',
       items: [
         { 
-          name: 'База данных', 
+          name: 'База поставщиков', 
           href: '/database', 
           icon: Building2
         },

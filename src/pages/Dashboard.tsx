@@ -446,10 +446,10 @@ export default function Dashboard() {
               </div>
 
               {/* Quick Actions for Mobile */}
-              <div className="lg:hidden bg-primary rounded-2xl p-6 text-white">
-                <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
-                <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
-                  {!isFozil && (
+              {!isFozil && (
+                <div className="lg:hidden bg-primary rounded-2xl p-6 text-white">
+                  <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
+                  <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
                     <button
                       onClick={() => navigate('/requests', { state: { openForm: true } })}
                       className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
@@ -458,19 +458,19 @@ export default function Dashboard() {
                       <FileText className="w-5 h-5" />
                       <span className="text-sm font-medium">Новая заявка</span>
                     </button>
-                  )}
-                  {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
-                    <button
-                      onClick={() => navigate('/tasks', { state: { openForm: true } })}
-                      className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                                bg-white/10 hover:bg-white/20 transition-colors text-center"
-                    >
-                      <ListTodo className="w-5 h-5" />
-                      <span className="text-sm font-medium">Новая задача</span>
-                    </button>
-                  )}
+                    {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
+                      <button
+                        onClick={() => navigate('/tasks', { state: { openForm: true } })}
+                        className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
+                                  bg-white/10 hover:bg-white/20 transition-colors text-center"
+                      >
+                        <ListTodo className="w-5 h-5" />
+                        <span className="text-sm font-medium">Новая задача</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Calendar for Mobile */}
               {!isFozil && (
@@ -849,29 +849,31 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions - Desktop Only */}
-            <div className="hidden lg:block bg-primary rounded-2xl p-6 text-white">
-              <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
-              <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
-                <button
-                  onClick={() => navigate('/requests', { state: { openForm: true } })}
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                            bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
-                >
-                  <FileText className="w-5 h-5" />
-                  <span className="text-sm font-medium">Новая заявка</span>
-                </button>
-                {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
+            {!isFozil && (
+              <div className="hidden lg:block bg-primary rounded-2xl p-6 text-white">
+                <h3 className="text-lg font-semibold mb-4">Быстрые действия</h3>
+                <div className={`${user.id === '00000000-0000-0000-0000-000000000001' ? '' : 'grid grid-cols-2'} gap-3`}>
                   <button
-                    onClick={() => navigate('/tasks', { state: { openForm: true } })}
+                    onClick={() => navigate('/requests', { state: { openForm: true } })}
                     className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
-                              bg-white/10 hover:bg-white/20 transition-colors text-center"
+                              bg-white/10 hover:bg-white/20 transition-colors text-center w-full"
                   >
-                    <ListTodo className="w-5 h-5" />
-                    <span className="text-sm font-medium">Новая задача</span>
+                    <FileText className="w-5 h-5" />
+                    <span className="text-sm font-medium">Новая заявка</span>
                   </button>
-                )}
+                  {hasTaskAccess && (user.id === '00000000-0000-0000-0000-000000000007' || user.id === '00000000-0000-0000-0000-000000000008') && (
+                    <button
+                      onClick={() => navigate('/tasks', { state: { openForm: true } })}
+                      className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl 
+                                bg-white/10 hover:bg-white/20 transition-colors text-center"
+                    >
+                      <ListTodo className="w-5 h-5" />
+                      <span className="text-sm font-medium">Новая задача</span>
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Recent Applications - Desktop Version */}
             {!isAziz && !isFozil && !isUmarali && !isUmar && !isAkmal && (

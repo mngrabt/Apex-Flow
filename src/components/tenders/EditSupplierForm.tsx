@@ -88,6 +88,20 @@ export default function EditSupplierForm({
     return value.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   };
 
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove all non-digits
+    const digits = e.target.value.replace(/\D/g, '');
+    
+    // Format the number with spaces
+    let formatted = '';
+    if (digits.length > 0) formatted += digits.slice(0, 2);
+    if (digits.length > 2) formatted += ' ' + digits.slice(2, 5);
+    if (digits.length > 5) formatted += ' ' + digits.slice(5, 7);
+    if (digits.length > 7) formatted += ' ' + digits.slice(7, 9);
+    
+    setFormData(prev => ({ ...prev, contactNumber: formatted }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplier || !user) return;
@@ -196,11 +210,11 @@ export default function EditSupplierForm({
                     <input
                       type="tel"
                       value={formData.contactNumber}
-                      onChange={e => setFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                      onChange={handlePhoneNumberChange}
                       className={`${styles.input} ${user?.role === 'S' 
                         ? 'opacity-60 bg-gray-200 border-gray-300 text-gray-800 cursor-not-allowed select-none pointer-events-none shadow-inner' 
                         : ''}`}
-                      placeholder="+998 90 123 45 67"
+                      placeholder="99 123 45 67"
                       required
                       disabled={user?.role === 'S'}
                     />

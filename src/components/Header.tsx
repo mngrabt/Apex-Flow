@@ -18,14 +18,14 @@ export default function Header({ children, searchQuery, onSearchChange }: Header
           
           {onSearchChange && (
             <div className="relative flex-1">
-              <div className="relative -ml-[30px]">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <div className="relative -ml-[30px] px-4">
+                <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery || ''}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder="Поиск по названию или категории..."
-                  className="w-full pl-11 pr-4 py-2 bg-transparent
+                  className="w-full pl-11 pr-8 py-2 bg-transparent
                            text-sm text-gray-900 placeholder-gray-400 
                            border-0 outline-none focus:outline-none focus:ring-0
                            transition-all duration-200"

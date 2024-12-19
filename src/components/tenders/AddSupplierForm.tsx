@@ -115,6 +115,20 @@ export default function AddSupplierForm({ tenderId, onClose, currentUser }: AddS
     return value.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   };
 
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove all non-digits
+    const digits = e.target.value.replace(/\D/g, '');
+    
+    // Format the number with spaces
+    let formatted = '';
+    if (digits.length > 0) formatted += digits.slice(0, 2);
+    if (digits.length > 2) formatted += ' ' + digits.slice(2, 5);
+    if (digits.length > 5) formatted += ' ' + digits.slice(5, 7);
+    if (digits.length > 7) formatted += ' ' + digits.slice(7, 9);
+    
+    setFormData(prev => ({ ...prev, contactNumber: formatted }));
+  };
+
   // Rest of your existing UI code...
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -192,11 +206,11 @@ export default function AddSupplierForm({ tenderId, onClose, currentUser }: AddS
                     <input
                       type="tel"
                       value={currentUser?.role === 'S' ? supplierData?.contactNumber || '' : formData.contactNumber}
-                      onChange={e => setFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                      onChange={handlePhoneNumberChange}
                       className={`${styles.input} ${currentUser?.role === 'S' 
                         ? 'opacity-60 bg-gray-200 border-gray-300 text-gray-800 cursor-not-allowed select-none pointer-events-none shadow-inner' 
                         : ''}`}
-                      placeholder="+998 90 123 45 67"
+                      placeholder="99 123 45 67"
                       required
                       disabled={currentUser?.role === 'S'}
                     />

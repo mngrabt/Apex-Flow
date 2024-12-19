@@ -104,6 +104,7 @@ export async function fetchProtocolsQuery() {
         )
       )
     `)
+    .neq('status', 'completed')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -114,6 +115,46 @@ export async function fetchProtocolsQuery() {
     protocol_signatures: p.signatures,
     request_signatures: p.request?.request_signatures
   })));
+  
+  return data;
+}
+
+export async function fetchCompletedProtocolsQuery() {
+  const { data, error } = await supabase
+    .from('protocols')
+    .select(`
+      *,
+      signatures:protocol_signatures(
+        user_id,
+        date
+      ),
+      request:requests!protocols_request_id_fkey!inner(
+        id,
+        number,
+        date,
+        department,
+        status,
+        created_at,
+        created_by,
+        document_url,
+        categories,
+        request_signatures!requests_id_fkey(
+          user_id,
+          date
+        ),
+        items:request_items(
+          id,
+          name,
+          description,
+          quantity,
+          total_sum
+        )
+      )
+    `)
+    .or(`type.eq.cash,and(status.eq.completed)`)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
   
   return data;
 }
@@ -206,15 +247,16 @@ export async function fetchProtocolDetails(protocolId: string) {
 }
 
 export async function signCashRequestQuery(protocolId: string, requestId: string, userId: string, currentDate: string) {
-  console.log('Signing cash request with:', { protocolId, requestId, userId, currentDate });
-
   try {
     // First sign the protocol
-    const { data: signResult, error: protocolError } = await supabase.rpc('sign_and_complete_protocol', {
-      p_protocol_id: protocolId,
-      p_user_id: userId,
-      p_current_date: currentDate
-    });
+    const { error: protocolError } = await supabase
+      .from('protocol_signatures')
+      .insert({
+        protocol_id: protocolId,
+        user_id: userId,
+        date: currentDate,
+        type: 'cash'
+      });
 
     if (protocolError) {
       console.error('Error signing protocol:', protocolError);
@@ -268,27 +310,42 @@ export async function signCashRequestQuery(protocolId: string, requestId: string
         protocol.signatures?.some(sig => sig.user_id === signerId)
       );
 
-      console.log('Checking cash protocol signatures:', {
-        protocolId,
-        type: protocol.type,
-        department: protocol.department || protocol.request?.department,
-        requestNumber: protocol.request?.number,
-        signatures: protocol.signatures?.map(s => s.user_id),
-        hasAllSignatures,
-        currentSigner: userId
-      });
-
       if (hasAllSignatures) {
-        console.log('All signatures collected, sending notification to Dinara');
+        // Update protocol status to completed
+        const { error: updateError } = await supabase
+          .from('protocols')
+          .update({ 
+            status: 'completed',
+            completed_at: currentDate,
+            finance_status: 'not_submitted'
+          })
+          .eq('id', protocolId);
+
+        if (updateError) {
+          console.error('Error updating protocol status:', updateError);
+          throw updateError;
+        }
+
+        // Add to archived_protocols only when all signatures are collected
+        const { error: archiveError } = await supabase
+          .from('archived_protocols')
+          .insert({
+            protocol_id: protocolId,
+            created_at: currentDate
+          });
+
+        if (archiveError && !archiveError.message.includes('duplicate')) {
+          console.error('Error archiving protocol:', archiveError);
+          throw archiveError;
+        }
+
+        // Send notification about protocol needing a number
         await sendNotification('PROTOCOL_NEEDS_NUMBER', {
           name: protocol.request?.items?.[0]?.name || `Протокол #${protocolId}`,
-          type: protocol.type,
+          type: protocol.type || 'cash',
           department: protocol.department || protocol.request?.department,
           requestNumber: protocol.request?.number
         });
-        console.log('Notification sent successfully');
-      } else {
-        console.log('Not all signatures collected yet, skipping notification');
       }
     }
   } catch (error) {
@@ -305,12 +362,6 @@ export async function signProtocolQuery(protocolId: string, userId: string, curr
   });
 
   try {
-    // Validate inputs
-    if (!protocolId || !userId || !currentDate) {
-      console.error('Missing required parameters:', { protocolId, userId, currentDate });
-      throw new Error('Missing required parameters');
-    }
-
     // Get initial protocol state
     const { data: initialProtocol, error: initialError } = await supabase
       .from('protocols')
@@ -337,22 +388,19 @@ export async function signProtocolQuery(protocolId: string, userId: string, curr
       return;
     }
 
-    console.log('Initial protocol state:', {
-      protocol: initialProtocol,
-      currentSignatures: initialProtocol?.signatures?.map(s => s.user_id)
-    });
+    // Add signature with minimal required fields
+    const { error: signatureError } = await supabase
+      .from('protocol_signatures')
+      .insert({
+        protocol_id: protocolId,
+        user_id: userId,
+        date: currentDate,
+        type: initialProtocol.type || 'tender'
+      });
 
-    // Call the sign_and_complete_protocol function directly
-    console.log('Calling sign_and_complete_protocol function...');
-    const { error: completionError } = await supabase.rpc('sign_and_complete_protocol', {
-      p_protocol_id: protocolId,
-      p_user_id: userId,
-      p_current_date: currentDate
-    });
-
-    if (completionError) {
-      console.error('Error from sign_and_complete_protocol:', completionError);
-      throw completionError;
+    if (signatureError) {
+      console.error('Error adding signature:', signatureError);
+      throw signatureError;
     }
 
     // Get protocol with all signatures to check if it's complete
@@ -385,11 +433,6 @@ export async function signProtocolQuery(protocolId: string, userId: string, curr
       throw new Error('Updated protocol not found');
     }
 
-    console.log('Updated protocol state:', {
-      protocol,
-      currentSignatures: protocol?.signatures?.map(s => s.user_id)
-    });
-
     // Required signers for regular protocols
     const requiredSigners = [
       '00000000-0000-0000-0000-000000000001', // Abdurauf
@@ -403,31 +446,42 @@ export async function signProtocolQuery(protocolId: string, userId: string, curr
       protocol.signatures?.some(sig => sig.user_id === signerId)
     );
 
-    console.log('Signature check results:', {
-      protocolId,
-      type: protocol.type,
-      department: protocol.department || protocol.request?.department,
-      requestNumber: protocol.request?.number,
-      requiredSigners,
-      currentSignatures: protocol.signatures?.map(s => s.user_id),
-      hasAllSignatures,
-      currentSigner: userId,
-      missingSigners: requiredSigners.filter(id => 
-        !protocol.signatures?.some(sig => sig.user_id === id)
-      )
-    });
-
     if (hasAllSignatures) {
-      console.log('All signatures collected, sending notification to Dinara');
+      // Update protocol status to completed
+      const { error: updateError } = await supabase
+        .from('protocols')
+        .update({ 
+          status: 'completed',
+          completed_at: currentDate,
+          finance_status: 'not_submitted'
+        })
+        .eq('id', protocolId);
+
+      if (updateError) {
+        console.error('Error updating protocol status:', updateError);
+        throw updateError;
+      }
+
+      // Add to archived_protocols only when all signatures are collected
+      const { error: archiveError } = await supabase
+        .from('archived_protocols')
+        .insert({
+          protocol_id: protocolId,
+          created_at: currentDate
+        });
+
+      if (archiveError && !archiveError.message.includes('duplicate')) {
+        console.error('Error archiving protocol:', archiveError);
+        throw archiveError;
+      }
+
+      // Send notification about protocol needing a number
       await sendNotification('PROTOCOL_NEEDS_NUMBER', {
         name: protocol.request?.items?.[0]?.name || `Протокол #${protocolId}`,
-        type: protocol.type,
+        type: protocol.type || 'tender',
         department: protocol.department || protocol.request?.department,
         requestNumber: protocol.request?.number
       });
-      console.log('Notification sent successfully');
-    } else {
-      console.log('Not all signatures collected yet, skipping notification');
     }
   } catch (error) {
     console.error('Error in signProtocolQuery:', error);

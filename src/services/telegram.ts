@@ -93,7 +93,7 @@ export function generateNotificationMessage(
   companyName: string,
   additionalInfo?: { 
     reason?: string;
-    login?: string;
+    username?: string;
     password?: string;
   }
 ): string {
@@ -103,7 +103,7 @@ export function generateNotificationMessage(
     case 'application_approved':
       return `Ваша заявка на регистрацию одобрена.\n\n` +
              `Данные для доступа в систему:\n` +
-             `Логин: ${additionalInfo?.login || 'Не указан'}\n` +
+             `Логин: ${additionalInfo?.username || 'Не указан'}\n` +
              `Пароль: ${additionalInfo?.password || 'Не указан'}`;
     case 'application_rejected':
       return `Ваша заявка на регистрацию отклонена.${

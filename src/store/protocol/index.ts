@@ -3,6 +3,7 @@ import { Protocol, RequestSignature } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { 
   fetchProtocolsQuery, 
+  fetchCompletedProtocolsQuery,
   signProtocolQuery, 
   signCashRequestQuery, 
   submitProtocolQuery, 
@@ -15,7 +16,9 @@ import { sendNotification } from '../../services/notificationService';
 
 interface ProtocolState {
   protocols: Protocol[];
+  completedProtocols: Protocol[];
   fetchProtocols: () => Promise<void>;
+  fetchCompletedProtocols: () => Promise<void>;
   signProtocol: (protocolId: string, userId: string) => Promise<void>;
   signCashRequest: (requestId: string, userId: string) => Promise<void>;
   submitProtocol: (protocolId: string, urgency: 'high' | 'low') => Promise<void>;
@@ -26,85 +29,108 @@ interface ProtocolState {
 
 export const useProtocolStore = create<ProtocolState>((set, get) => ({
   protocols: [],
+  completedProtocols: [],
 
   fetchProtocols: async () => {
     try {
       const protocolsData = await fetchProtocolsQuery();
       
-      const protocols: Protocol[] = protocolsData.map(protocol => {
-        console.log('Processing protocol:', {
-          id: protocol.id,
-          type: protocol.type,
-          request: protocol.request,
-          signatures: protocol.signatures,
-          request_signatures: protocol.request?.request_signatures
-        });
-
-        // Map the request signatures if they exist
-        const requestSignatures: RequestSignature[] = protocol.request?.request_signatures?.map(sig => ({
+      const protocols: Protocol[] = protocolsData.map(protocol => ({
+        id: protocol.id,
+        tenderId: protocol.tender_id,
+        type: protocol.type || 'tender',
+        status: protocol.status,
+        financeStatus: protocol.finance_status || 'not_submitted',
+        urgency: protocol.urgency,
+        submittedAt: protocol.submitted_at,
+        paidAt: protocol.paid_at,
+        createdAt: protocol.created_at,
+        number: protocol.number,
+        department: protocol.department,
+        signatures: protocol.signatures?.map(sig => ({
           userId: sig.user_id,
           date: sig.date
-        })) || [];
-
-        // Map protocol signatures
-        const protocolSignatures: RequestSignature[] = protocol.signatures?.map(sig => ({
-          userId: sig.user_id,
-          date: sig.date
-        })) || [];
-
-        console.log('Mapped signatures:', {
-          protocol_id: protocol.id,
-          protocol_signatures: protocolSignatures,
-          request_signatures: requestSignatures
-        });
-
-        return {
-          id: protocol.id,
-          tenderId: protocol.tender_id,
+        })) || [],
+        request: protocol.request ? {
+          id: protocol.request.id,
           type: protocol.type || 'tender',
-          status: protocol.status,
-          financeStatus: protocol.finance_status || 'not_submitted',
-          urgency: protocol.urgency,
-          submittedAt: protocol.submitted_at,
-          paidAt: protocol.paid_at,
-          createdAt: protocol.created_at,
-          number: protocol.number,
-          department: protocol.department,
-          signatures: protocolSignatures,
-          request: protocol.request ? {
-            id: protocol.request.id,
-            type: protocol.type || 'tender',
-            number: protocol.request.number,
-            date: protocol.request.date,
-            department: protocol.request.department,
-            status: protocol.request.status,
-            createdAt: protocol.request.created_at,
-            createdBy: protocol.request.created_by,
-            documentUrl: protocol.request.document_url,
-            request_signatures: requestSignatures,
-            categories: protocol.request.categories || [],
-            items: protocol.request.items?.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              description: item.description,
-              quantity: item.quantity,
-              totalSum: item.total_sum || 0
-            })) || []
-          } : undefined
-        };
-      });
-
-      console.log('Final mapped protocols:', protocols.map(p => ({
-        id: p.id,
-        type: p.type,
-        request_id: p.request?.id,
-        signatures: p.signatures,
-        request_signatures: p.request?.request_signatures
-      })));
+          number: protocol.request.number,
+          date: protocol.request.date,
+          department: protocol.request.department,
+          status: protocol.request.status,
+          createdAt: protocol.request.created_at,
+          createdBy: protocol.request.created_by,
+          documentUrl: protocol.request.document_url,
+          request_signatures: protocol.request.request_signatures?.map(sig => ({
+            userId: sig.user_id,
+            date: sig.date
+          })) || [],
+          categories: protocol.request.categories || [],
+          items: protocol.request.items?.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            totalSum: item.total_sum || 0
+          })) || []
+        } : undefined
+      }));
       
       set({ protocols });
     } catch (error) {
       console.error('Error fetching protocols:', error);
+      throw error;
+    }
+  },
+
+  fetchCompletedProtocols: async () => {
+    try {
+      const protocolsData = await fetchCompletedProtocolsQuery();
+      
+      const completedProtocols: Protocol[] = protocolsData.map(protocol => ({
+        id: protocol.id,
+        tenderId: protocol.tender_id,
+        type: protocol.type || 'tender',
+        status: protocol.status,
+        financeStatus: protocol.finance_status || 'not_submitted',
+        urgency: protocol.urgency,
+        submittedAt: protocol.submitted_at,
+        paidAt: protocol.paid_at,
+        createdAt: protocol.created_at,
+        number: protocol.number,
+        department: protocol.department,
+        signatures: protocol.signatures?.map(sig => ({
+          userId: sig.user_id,
+          date: sig.date
+        })) || [],
+        request: protocol.request ? {
+          id: protocol.request.id,
+          type: protocol.type || 'tender',
+          number: protocol.request.number,
+          date: protocol.request.date,
+          department: protocol.request.department,
+          status: protocol.request.status,
+          createdAt: protocol.request.created_at,
+          createdBy: protocol.request.created_by,
+          documentUrl: protocol.request.document_url,
+          request_signatures: protocol.request.request_signatures?.map(sig => ({
+            userId: sig.user_id,
+            date: sig.date
+          })) || [],
+          categories: protocol.request.categories || [],
+          items: protocol.request.items?.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            totalSum: item.total_sum || 0
+          })) || []
+        } : undefined
+      }));
+      
+      set({ completedProtocols });
+    } catch (error) {
+      console.error('Error fetching completed protocols:', error);
       throw error;
     }
   },
@@ -122,17 +148,84 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
   signProtocol: async (protocolId: string, userId: string) => {
     try {
       const currentDate = new Date().toISOString();
-      await signProtocolQuery(protocolId, userId, currentDate);
       
-      // Get all signatures for this protocol
-      const { data: signatures } = await supabase
+      console.log('Starting protocol signing process:', {
+        protocolId,
+        userId,
+        currentDate
+      });
+
+      // Get initial protocol state
+      const { data: initialProtocol, error: initialError } = await supabase
+        .from('protocols')
+        .select(`
+          *,
+          signatures:protocol_signatures(user_id, date)
+        `)
+        .eq('id', protocolId)
+        .single();
+
+      if (initialError) {
+        console.error('Error fetching initial protocol state:', initialError);
+        throw initialError;
+      }
+
+      if (!initialProtocol) {
+        console.error('Protocol not found:', protocolId);
+        throw new Error('Protocol not found');
+      }
+
+      // Check if user has already signed
+      if (initialProtocol.signatures?.some(sig => sig.user_id === userId)) {
+        console.log('User has already signed this protocol');
+        return;
+      }
+
+      // Add the signature with type field
+      const { error: signatureError } = await supabase
         .from('protocol_signatures')
-        .select('user_id')
-        .eq('protocol_id', protocolId);
+        .insert({
+          protocol_id: protocolId,
+          user_id: userId,
+          date: currentDate
+        });
 
-      if (!signatures) return;
+      if (signatureError) {
+        console.error('Error adding signature:', signatureError);
+        throw signatureError;
+      }
 
-      // Check if all required signatures are present
+      // Get protocol with all signatures to check if it's complete
+      const { data: protocol, error: fetchError } = await supabase
+        .from('protocols')
+        .select(`
+          *,
+          signatures:protocol_signatures(
+            user_id,
+            date
+          ),
+          request:requests(
+            department,
+            number,
+            items:request_items(
+              name
+            )
+          )
+        `)
+        .eq('id', protocolId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching updated protocol:', fetchError);
+        throw fetchError;
+      }
+
+      if (!protocol) {
+        console.error('Updated protocol not found:', protocolId);
+        throw new Error('Updated protocol not found');
+      }
+
+      // Required signers for regular protocols
       const requiredSigners = [
         '00000000-0000-0000-0000-000000000001', // Abdurauf
         '00000000-0000-0000-0000-000000000003', // Fozil
@@ -141,39 +234,36 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       ];
 
       const hasAllSignatures = requiredSigners.every(id => 
-        signatures.some(sig => sig.user_id === id)
+        protocol.signatures?.some(sig => sig.user_id === id)
       );
 
       if (hasAllSignatures) {
-        // Get protocol details for notification
-        const { data: protocol } = await supabase
+        // Update protocol status to completed
+        const { error: updateError } = await supabase
           .from('protocols')
-          .select(`
-            *,
-            tender:tenders(
-              request:requests(
-                items:request_items(*)
-              )
-            ),
-            request:requests(
-              items:request_items(*)
-            )
-          `)
-          .eq('id', protocolId)
-          .single();
+          .update({ 
+            status: 'completed',
+            completed_at: currentDate
+          })
+          .eq('id', protocolId);
 
-        if (protocol) {
-          const title = protocol.type === 'cash' 
-            ? protocol.request?.items?.[0]?.name 
-            : protocol.tender?.request?.items?.[0]?.name;
-
-          await sendNotification('PROTOCOL_NEEDS_NUMBER', {
-            name: title || `Протокол #${protocol.id}`
-          });
+        if (updateError) {
+          console.error('Error updating protocol status:', updateError);
+          throw updateError;
         }
+
+        // Send notification about protocol needing a number
+        await sendNotification('PROTOCOL_NEEDS_NUMBER', {
+          name: protocol.request?.items?.[0]?.name || `Протокол #${protocolId}`,
+          type: protocol.type || 'tender',
+          department: protocol.department || protocol.request?.department,
+          requestNumber: protocol.request?.number
+        });
       }
 
+      // Fetch fresh data
       await get().fetchProtocols();
+      await get().fetchCompletedProtocols();
     } catch (error) {
       console.error('Error signing protocol:', error);
       throw error;
@@ -270,17 +360,6 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
   updateProtocolNumber: async (protocolId: string, number: string) => {
     try {
       await updateProtocolNumberQuery(protocolId, number);
-      
-      // Get protocol data
-      const protocol = get().protocols.find(p => p.id === protocolId);
-      if (!protocol) throw new Error('Protocol not found');
-
-      // Notify Umarali that protocol is ready to be submitted
-      await sendNotification('PROTOCOL_GOT_NUMBER', {
-        name: protocol.name || `Протокол #${protocol.id}`,
-        number
-      });
-
       await get().fetchProtocols();
     } catch (error) {
       console.error('Error updating protocol number:', error);

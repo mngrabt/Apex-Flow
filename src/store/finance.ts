@@ -59,6 +59,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
           paid_at,
           created_at,
           department,
+          number,
           archived_protocol:archived_protocols(
             number
           ),
@@ -123,6 +124,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             )
           )
         `)
+        .or(`type.eq.cash,and(status.eq.completed)`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -138,7 +140,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         paidAt: p.paid_at,
         createdAt: p.created_at,
         tenderId: p.tender?.id,
-        number: p.archived_protocol?.number,
+        number: p.number || p.archived_protocol?.number,
         department: p.department,
         signatures: p.signatures?.map((sig: any) => ({
           userId: sig.user_id,
@@ -165,10 +167,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
           id: p.tender.id,
           requestId: p.tender.request_id,
           status: p.tender.status,
-          winnerId: p.tender.winner_id,
+          winnerId: p.tender.winner_id || '',
           winnerReason: p.tender.winner_reason,
           createdAt: p.tender.created_at,
-          suppliers: p.tender.suppliers?.map(s => ({
+          suppliers: p.tender.suppliers?.map((s: any) => ({
             id: s.id,
             companyName: s.company_name,
             contactPerson: s.contact_person,
@@ -185,7 +187,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             number: p.tender.request.number,
             date: p.tender.request.date,
             department: p.tender.request.department,
-            categories: p.tender.request.categories,
+            categories: p.tender.request.categories || [],
             documentUrl: p.tender.request.document_url,
             status: p.tender.request.status,
             createdAt: p.tender.request.created_at,

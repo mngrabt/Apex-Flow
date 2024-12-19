@@ -225,4 +225,4 @@ export async function migrateData() {
     console.error('Error during data migration:', error);
     throw error;
   }
-}</content>
+}

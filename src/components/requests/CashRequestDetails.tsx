@@ -116,17 +116,30 @@ export default function CashRequestDetails({ backState }: CashRequestDetailsProp
     if (!user || !protocolData || !protocolData.request) return;
     try {
       setIsSigningId(protocolData.id);
+      const currentDate = new Date().toISOString();
 
-      // Insert signature directly into request_signatures table
-      const { error } = await supabase
+      // Insert signature into request_signatures table
+      const { error: requestError } = await supabase
         .from('request_signatures')
         .insert({
           request_id: id,
           user_id: user.id,
-          date: new Date().toISOString()
+          date: currentDate
         });
 
-      if (error) throw error;
+      if (requestError) throw requestError;
+
+      // Insert signature into protocol_signatures table
+      const { error: protocolError } = await supabase
+        .from('protocol_signatures')
+        .insert({
+          protocol_id: protocolData.id,
+          user_id: user.id,
+          date: currentDate,
+          type: 'cash'  // Important: specify the correct type
+        });
+
+      if (protocolError) throw protocolError;
 
       // Refresh signatures
       const { data: newSignatures } = await supabase
@@ -145,6 +158,30 @@ export default function CashRequestDetails({ backState }: CashRequestDetailsProp
       );
 
       if (allSigned) {
+        // Update protocol status to completed
+        const { error: updateError } = await supabase
+          .from('protocols')
+          .update({ 
+            status: 'completed',
+            finance_status: 'not_submitted'
+          })
+          .eq('id', protocolData.id);
+
+        if (updateError) throw updateError;
+
+        // Add to archived_protocols
+        const { error: archiveError } = await supabase
+          .from('archived_protocols')
+          .insert({
+            protocol_id: protocolData.id,
+            created_at: currentDate
+          });
+
+        // Only throw if it's not a duplicate error
+        if (archiveError && !archiveError.message.includes('duplicate')) {
+          throw archiveError;
+        }
+
         navigate('/cash-requests');
       }
     } catch (error) {

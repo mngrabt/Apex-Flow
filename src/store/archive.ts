@@ -116,6 +116,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
             )
           )
         `)
+        .or(`type.eq.cash,and(status.eq.completed)`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -223,7 +224,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
     try {
       console.log('Starting protocol number update:', { protocolId, number });
 
-      // Update both tables in sequence
+      // Update protocols table first
       const { error: protocolError } = await supabase
         .from('protocols')
         .update({ number })
@@ -234,6 +235,7 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
         throw protocolError;
       }
 
+      // Then update archived_protocols table
       const { error: archiveError } = await supabase
         .from('archived_protocols')
         .update({ number })
@@ -241,6 +243,15 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
 
       if (archiveError) {
         console.error('Error updating archived_protocols table:', archiveError);
+        // If archive update fails, rollback protocols update
+        const { error: rollbackError } = await supabase
+          .from('protocols')
+          .update({ number: null })
+          .eq('id', protocolId);
+
+        if (rollbackError) {
+          console.error('Error rolling back protocol number update:', rollbackError);
+        }
         throw archiveError;
       }
 
@@ -272,18 +283,11 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
         ? protocol.request?.items?.[0]?.name
         : protocol.tender?.request?.items?.[0]?.name;
 
-      // Send different notifications based on type
-      if (protocol.type === 'cash') {
-        await sendNotification('CASH_REQUEST_GOT_NUMBER', {
-          name: protocolName || `Заявка на наличные #${protocolId}`,
-          number: number
-        });
-      } else {
-        await sendNotification('PROTOCOL_GOT_NUMBER', {
-          name: protocolName || `Протокол #${protocolId}`,
-          number: number
-        });
-      }
+      // Send notification
+      await sendNotification(protocol.type === 'cash' ? 'CASH_REQUEST_GOT_NUMBER' : 'PROTOCOL_GOT_NUMBER', {
+        name: protocolName || `${protocol.type === 'cash' ? 'Заявка на наличные' : 'Протокол'} #${protocolId}`,
+        number: number
+      });
 
       console.log('Successfully updated protocol number and sent notification');
       await get().fetchArchivedProtocols();

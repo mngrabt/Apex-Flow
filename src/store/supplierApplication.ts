@@ -146,7 +146,7 @@ export const useSupplierApplicationStore = create<SupplierApplicationState>((set
       if (!application) throw new Error('Application not found');
 
       if (approved) {
-        // Use the new secure function for approval
+        // Use the secure function for approval which will create the user
         const { error: approvalError } = await supabase
           .rpc('approve_supplier_application', {
             application_id: id,
